@@ -1,0 +1,2124 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>שעון שבת - דשבורד יוקרתי</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Frank+Ruhl+Libre:wght@300;400;600;700&family=Assistant:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold-primary: #e2c073;
+    --gold-light: #f7e6b5;
+    --gold-glow: rgba(226, 192, 115, 0.25);
+    --bg-dark: #07080d;
+    --wine: rgba(74, 28, 43, 0.45);
+    --dusk: rgba(28, 19, 43, 0.6);
+  }
+  *{ -webkit-tap-highlight-color: transparent; }
+  html,body{ height:100%; margin:0; overflow:hidden; }
+  body {
+    font-family: 'Assistant', sans-serif;
+    background-color: var(--bg-dark);
+    color: #f8f5f0;
+    user-select: none;
+  }
+  .font-serif-luxury{ font-family: 'Frank Ruhl Libre', serif; }
+  .font-num{ font-family: 'Cinzel', serif; }
+  .tabular{ font-variant-numeric: tabular-nums; }
+  /* Cinzel has no real tabular-figure support, so digit widths vary slightly frame to frame —
+     fixing the clock's own box width (in ch, so it scales with font-size) stops the whole
+     block from shifting left/right every second; only this fixed box stays centered. */
+  .clock-text{ display:inline-block; width:8.6ch; text-align:center; font-size: clamp(2.9rem, 13.5vw, 10rem); }
+  .date-line{ font-size: clamp(1rem, 3.8vw, 2.15rem); }
+  .date-sep{ font-size: clamp(.7rem, 2vw, 1rem); }
+
+  .ambient-bg{
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(circle at 20% 20%, var(--wine) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, var(--dusk) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(226,192,115,0.08) 0%, transparent 65%),
+      linear-gradient(180deg, #05060a 0%, #0c0e17 100%);
+    background-size: 150% 150%;
+    animation: pulseMesh 20s ease-in-out infinite alternate;
+    transition: filter 1.5s ease;
+  }
+  .ambient-bg.shabbat-active{ filter: saturate(1.25) brightness(1.12); animation-duration: 34s; }
+  @keyframes pulseMesh{ 0%{background-position:0% 0%} 100%{background-position:100% 100%} }
+
+  #stars{
+    position:fixed; inset:0; z-index:1; opacity:.45; pointer-events:none;
+    background-image:
+      radial-gradient(1.5px 1.5px at 12% 22%, #fff, transparent),
+      radial-gradient(1px 1px at 28% 68%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 45% 18%, #fff, transparent),
+      radial-gradient(1px 1px at 62% 42%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 78% 28%, #fff, transparent),
+      radial-gradient(1px 1px at 88% 62%, #fff, transparent);
+    animation: twinkle 5s ease-in-out infinite;
+  }
+  @keyframes twinkle{ 0%,100%{opacity:.28} 50%{opacity:.6} }
+
+  .candle-glow{
+    width:10px; height:18px;
+    background: radial-gradient(ellipse at 50% 80%, #ffffff 0%, var(--gold-primary) 45%, #732e35 85%, transparent 100%);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    filter: drop-shadow(0 0 10px var(--gold-primary));
+    animation: flameFlicker 2.5s ease-in-out infinite alternate;
+  }
+  @keyframes flameFlicker{
+    0%{ transform: scale(1) rotate(-1deg); opacity:.92; }
+    50%{ transform: scale(1.08,.92) rotate(1.5deg); opacity:1; }
+    100%{ transform: scale(.95,1.05) rotate(-.5deg); opacity:.88; }
+  }
+
+  .luxury-card{
+    background: rgba(15,17,26,0.55);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(226,192,115,0.18);
+    box-shadow: 0 12px 40px 0 rgba(0,0,0,.45), inset 0 1px 0 0 rgba(255,255,255,.08);
+    transition: all .4s ease;
+  }
+  .luxury-card:hover{ border-color: rgba(226,192,115,0.4); box-shadow: 0 16px 48px 0 rgba(0,0,0,.6), 0 0 20px rgba(226,192,115,.15); }
+
+  .gold-text-gradient{
+    background: linear-gradient(135deg, #ffffff 0%, var(--gold-light) 50%, var(--gold-primary) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .gold-icon{ filter: drop-shadow(0 2px 6px rgba(226,192,115,.3)); }
+
+  .settings-modal{ background: rgba(4,3,8,0.82); backdrop-filter: blur(12px); }
+  .settings-card{ background: linear-gradient(165deg, #0e0b16 0%, #171122 100%); border:1px solid rgba(226,192,115,0.25); }
+
+  input[type="text"], input[type="number"], input[type="url"], select{
+    background: rgba(248,245,240,0.06); border:1px solid rgba(248,245,240,0.18); color:#f8f5f0;
+  }
+  input:focus, select:focus{ outline:none; border-color: var(--gold-primary); box-shadow: 0 0 0 3px rgba(226,192,115,0.2); }
+  select option{ background-color:#ffffff; color:#000000; }
+
+  input[type="file"]{
+    color:#f8f5f0; font-size:.75rem;
+  }
+  input[type="file"]::file-selector-button{
+    background: var(--gold-primary); color:#1c132b; border:none; border-radius:8px;
+    padding:6px 10px; font-size:.72rem; font-weight:600; cursor:pointer; margin-left:8px;
+  }
+
+  .gps-btn{
+    background:#3b82f6; color:#fff; border:none; padding:10px 14px; border-radius:10px;
+    font-weight:600; font-size:.8rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+    transition: background .2s; width:100%;
+  }
+  .gps-btn:hover{ background:#2563eb; }
+  .gps-btn:disabled{ opacity:.5; cursor:default; }
+
+  .toggle-track{ background: rgba(248,245,240,0.15); transition: background .25s; }
+  .toggle-track.on{ background: var(--gold-primary); }
+  .toggle-dot{ transition: transform .25s; }
+  .toggle-track.on .toggle-dot{ transform: translateX(-20px); }
+
+  .radio-pill{ border:1px solid rgba(248,245,240,0.2); transition: all .2s; cursor:pointer; }
+  .radio-pill.selected{ background: var(--gold-primary); color:#1c132b; border-color: var(--gold-primary); font-weight:700; }
+
+  .ring-bg{ stroke: rgba(248,245,240,0.12); }
+  .ring-fg{ stroke: var(--gold-primary); stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+
+  .status-dot{ transition: background-color .6s ease; }
+
+  .scrollbar-slim::-webkit-scrollbar{ width:6px; }
+  .scrollbar-slim::-webkit-scrollbar-thumb{ background: rgba(226,192,115,0.35); border-radius:4px; }
+
+  #audioStatusBtn{ transition: opacity .2s; }
+  @keyframes pulseGlow{ 0%,100%{box-shadow:0 0 0 0 rgba(226,192,115,.5)} 50%{box-shadow:0 0 0 16px rgba(226,192,115,0)} }
+
+  .icon-btn{ padding:.5rem; border-radius:9999px; opacity:.6; transition:opacity .2s; color:#f7e6b5; }
+  .icon-btn:hover{ opacity:1; background:rgba(255,255,255,0.06); }
+
+  .tab-btn{ padding:.5rem 1rem; border-radius:9999px; font-size:.75rem; font-weight:600; cursor:pointer; transition: all .2s; color: rgba(248,245,240,0.6); white-space:nowrap; }
+  .tab-btn.active{ background: var(--gold-primary); color:#1c132b; }
+  .tab-panel{ display:none; }
+  .tab-panel.active{ display:block; }
+  .date-row-wrap{ opacity:.85; }
+
+  /* Clock size now scales fluidly via clamp() above — no fixed breakpoint override needed. */
+</style>
+</head>
+<body>
+
+<div class="ambient-bg" id="bgLayer"></div>
+<div id="stars"></div>
+
+<div class="fixed opacity-0 pointer-events-none" style="width:1px;height:1px;overflow:hidden;">
+  <div id="ytPlayer"></div>
+</div>
+<audio id="localAudioPlayer" class="hidden"></audio>
+
+<!-- ============ MAIN DASHBOARD ============ -->
+<main class="relative z-10 w-screen flex flex-col px-5 sm:px-6 py-6 sm:py-8 max-w-5xl mx-auto overflow-y-auto scrollbar-slim" style="min-height: var(--app-vh, 100dvh);">
+
+  <!-- Header -->
+  <header class="w-full flex-shrink-0 flex items-center justify-between border-b border-white/10 pb-4">
+    <div class="flex items-center gap-3">
+      <div id="statusDot" class="status-dot w-2.5 h-2.5 rounded-full bg-neutral-500"></div>
+      <span id="cityName" class="text-xs uppercase tracking-widest font-semibold text-amber-200/70"></span>
+    </div>
+
+    <div class="text-center">
+      <h2 id="parashaTitle" class="text-base sm:text-xl font-bold tracking-wide text-amber-100"></h2>
+    </div>
+
+    <div class="flex items-center gap-1">
+      <button id="audioStatusBtn" title="מצב שמע" class="icon-btn flex items-center gap-1.5 !opacity-100 rounded-full" style="background:var(--gold-glow); padding:.4rem .7rem;">
+        <svg id="audioIconOn" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="hidden"><path d="M8 5v14l11-7z"/></svg>
+        <svg id="audioIconOff" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 5v14l11-7z" opacity=".5"/><path d="M3 3l18 18" stroke-width="2"/></svg>
+        <span id="audioStatusLabel" class="text-[11px] font-semibold">לאישור הפעלת מוזיקה</span>
+        <span id="audioStatusDot" class="w-1.5 h-1.5 rounded-full bg-neutral-500"></span>
+      </button>
+      <button id="fullscreenBtn" title="מסך מלא" class="icon-btn">
+        <svg id="fullscreenIconExpand" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/></svg>
+        <svg id="fullscreenIconCompress" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="hidden"><path d="M9 4v4a1 1 0 0 1-1 1H4M15 4v4a1 1 0 0 0 1 1h4M9 20v-4a1 1 0 0 0-1-1H4M15 20v-4a1 1 0 0 1 1-1h4"/></svg>
+      </button>
+      <button id="gearBtn" title="הגדרות" class="icon-btn">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Center master clock -->
+  <section class="w-full flex-1 flex flex-col items-center justify-center py-4">
+
+    <!-- Single-line date: Hebrew date (large/gold, same font as Gregorian) • weekday (full name) • Gregorian incl. year -->
+    <div class="date-row-wrap text-center mb-4 sm:mb-5 flex items-center justify-center gap-2 flex-wrap px-2">
+      <span id="hebrewDateLine" class="date-line font-bold" style="color:var(--gold-light);">&nbsp;</span>
+      <span class="date-sep text-amber-100/25">•</span>
+      <span id="weekdayLine" class="date-line font-bold" style="color:var(--gold-light);"></span>
+      <span class="date-sep text-amber-100/25">•</span>
+      <span id="gregDateLine" class="date-line font-bold" style="color:var(--gold-light);"></span>
+    </div>
+
+    <!-- Clock stage: candles are absolutely positioned so showing/hiding them on Shabbat
+         never shifts or resizes the clock itself. -->
+    <div id="clockRow" class="relative mt-2">
+      <div id="mainClock" class="font-num clock-text tabular font-light tracking-tight leading-none gold-text-gradient drop-shadow-2xl">--:--:--</div>
+
+      <div id="candleL" class="hidden candle-container absolute" style="top:50%; left:-58px; transform:translateY(-50%);">
+        <div class="candle-glow"></div>
+        <div class="w-[2px] h-2 bg-amber-950 mx-auto"></div>
+        <div class="w-2.5 h-12 bg-gradient-to-b from-amber-100 to-amber-200/40 rounded-t-sm shadow-inner mx-auto"></div>
+      </div>
+      <div id="candleR" class="hidden candle-container absolute" style="top:50%; right:-58px; transform:translateY(-50%);">
+        <div class="candle-glow"></div>
+        <div class="w-[2px] h-2 bg-amber-950 mx-auto"></div>
+        <div class="w-2.5 h-12 bg-gradient-to-b from-amber-100 to-amber-200/40 rounded-t-sm shadow-inner mx-auto"></div>
+      </div>
+    </div>
+
+    <!-- Same center slot shows either the countdown (weekdays) or "שבת שלום" (Shabbat) — never both. -->
+    <div class="w-full flex justify-center mt-6">
+      <div id="countdownWrap" class="luxury-card rounded-full pl-5 pr-2.5 py-1.5 flex items-center gap-3">
+        <div class="relative flex items-center justify-center" style="width:38px;height:38px;">
+          <svg width="38" height="38" viewBox="0 0 150 150">
+            <circle class="ring-bg" cx="75" cy="75" r="66" fill="none" stroke-width="12"/>
+            <circle id="ringFg" class="ring-fg" cx="75" cy="75" r="66" fill="none" stroke-width="12" stroke-dasharray="414.7" stroke-dashoffset="0" transform="rotate(-90 75 75)"/>
+          </svg>
+        </div>
+        <div>
+          <span id="countdownLabel" class="block text-[10px] text-amber-200/60 font-medium leading-none mb-1"></span>
+          <span id="countdownText" class="font-num text-base font-bold text-amber-300 tabular leading-none">00:00:00</span>
+        </div>
+      </div>
+      <div id="shabbatGreetingText" class="hidden luxury-card rounded-full px-7 py-2.5">
+        <span class="font-serif-luxury text-xl sm:text-2xl font-bold" style="color:var(--gold-light);">שבת שלום</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom grid -->
+  <footer class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 w-full flex-shrink-0">
+    <div class="luxury-card rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center text-center">
+      <svg class="gold-icon mb-2 text-amber-300" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 9v10M16 9v10"/><path d="M8 9c0-1.4.9-2 .9-3.4S8 3 8 3s-.9 1-.9 2.6S8 7.6 8 9z"/><path d="M16 9c0-1.4.9-2 .9-3.4S16 3 16 3s-.9 1-.9 2.6S16 7.6 16 9z"/><path d="M5 19h6M13 19h6"/></svg>
+      <span class="text-[11px] text-amber-200/60 font-medium mb-1">הדלקת נרות</span>
+      <span id="timeCandles" class="font-serif-luxury text-lg sm:text-2xl font-bold text-amber-100 tabular">--:--</span>
+    </div>
+    <div class="luxury-card rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center text-center">
+      <svg class="gold-icon mb-2 text-amber-300" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v3M4.2 9.2l1.8 1.8M19.8 9.2l-1.8 1.8M2 18h3M19 18h3"/><path d="M6 18a6 6 0 0112 0"/><path d="M2 22h20"/></svg>
+      <span class="text-[11px] text-amber-200/60 font-medium mb-1">שקיעה</span>
+      <span id="timeSunset" class="font-serif-luxury text-lg sm:text-2xl font-bold text-amber-100 tabular">--:--</span>
+    </div>
+    <div class="luxury-card rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center text-center">
+      <svg class="gold-icon mb-2 text-amber-300" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <g transform="translate(1,11) scale(0.34)"><path d="M12 2l2.9 6 6.6.8-4.8 4.5 1.2 6.5L12 16.9 6.1 19.8l1.2-6.5L2.5 8.8l6.6-.8L12 2z"/></g>
+        <g transform="translate(8,1.5) scale(0.5)"><path d="M12 2l2.9 6 6.6.8-4.8 4.5 1.2 6.5L12 16.9 6.1 19.8l1.2-6.5L2.5 8.8l6.6-.8L12 2z"/></g>
+        <g transform="translate(15,11) scale(0.38)"><path d="M12 2l2.9 6 6.6.8-4.8 4.5 1.2 6.5L12 16.9 6.1 19.8l1.2-6.5L2.5 8.8l6.6-.8L12 2z"/></g>
+      </svg>
+      <span class="text-[11px] text-amber-200/60 font-medium mb-1">צאת שבת</span>
+      <span id="timeHavdalah" class="font-serif-luxury text-lg sm:text-2xl font-bold text-amber-100 tabular">--:--</span>
+    </div>
+    <div class="luxury-card rounded-2xl p-3 sm:p-4 flex flex-col items-center justify-center text-center">
+      <svg class="gold-icon mb-2 text-amber-300" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        <path d="M4 4l.55 1.5L6 6l-1.45.5L4 8l-.55-1.5L2 6l1.45-.5L4 4z"/>
+        <path d="M5.5 14l.4 1.1L7 15.5l-1.1.4L5.5 17l-.4-1.1L4 15.5l1.1-.4.4-1.1z"/>
+      </svg>
+      <span class="text-[11px] text-amber-200/60 font-medium mb-1">צאת שבת (ר״ת)</span>
+      <span id="timeRT" class="font-serif-luxury text-lg sm:text-2xl font-bold text-amber-100 tabular">--:--</span>
+    </div>
+  </footer>
+</main>
+
+<div id="shabbatBadge" class="fixed bottom-4 right-4 z-20 hidden luxury-card rounded-full px-4 py-2 text-xs flex items-center gap-2 text-amber-100">
+  <span style="color:var(--gold-primary)">●</span> מצב שבת פעיל — השמע מושתק
+</div>
+
+<div id="reminderBanner" class="hidden fixed inset-x-4 top-6 z-50 max-w-md mx-auto">
+  <div class="luxury-card rounded-2xl p-4">
+    <div id="reminderBannerTitle" class="font-serif-luxury text-lg font-bold mb-2" style="color:var(--gold-light);"></div>
+    <ul id="reminderBannerList" class="text-sm space-y-1 mb-3 text-amber-100/90 list-disc pr-5"></ul>
+    <button id="reminderDoneBtn" class="w-full rounded-xl py-2 font-bold text-sm" style="background:var(--gold-primary); color:#1c132b;">בוצע</button>
+  </div>
+</div>
+
+<div id="ytErrorBadge" class="hidden fixed bottom-16 left-4 z-20 luxury-card rounded-full px-4 py-2 text-xs flex items-center gap-2 text-amber-100 max-w-[85%]" style="border-color:#e2735c;">
+  <span class="msg"></span>
+</div>
+
+<div id="terrainBadge" class="hidden fixed bottom-28 left-4 z-20 luxury-card rounded-full px-4 py-2 text-xs flex items-center gap-2 text-amber-100 max-w-[85%]" style="border-color:#e2a83c;">
+  <span style="color:#e2a83c;">⚠</span> אזור עם אי-ודאות בחישוב זמנים — מומלץ לוודא מול לוח מקומי
+</div>
+
+<div id="yomtovBadge" class="fixed bottom-4 left-4 z-20 hidden luxury-card rounded-full px-4 py-2 text-xs flex items-center gap-2 text-amber-100 max-w-[85%]">
+  <span style="color:var(--gold-primary)">⚠</span> חג חל ביום שישי השבוע — צפירת הכניסה בוטלה אוטומטית
+</div>
+
+<!-- ============ SETTINGS MODAL ============ -->
+<div id="settingsModal" class="fixed inset-0 z-40 hidden settings-modal items-center justify-center p-4">
+  <div id="settingsCard" class="settings-card rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto scrollbar-slim p-6">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-serif-luxury text-2xl font-bold text-amber-200">הגדרות שעון שבת</h2>
+      <button id="closeSettings" class="opacity-60 hover:opacity-100 text-2xl px-2 text-amber-100">×</button>
+    </div>
+
+
+    <div class="flex gap-1.5 mb-5 overflow-x-auto scrollbar-slim pb-1">
+      <div id="tabBtn-location" class="tab-btn active" data-tab="location">📍 מיקום</div>
+      <div id="tabBtn-audio" class="tab-btn" data-tab="audio">🎵 שמע</div>
+      <div id="tabBtn-reminders" class="tab-btn" data-tab="reminders">🔔 תזכורות</div>
+      <div id="tabBtn-advanced" class="tab-btn" data-tab="advanced">⚙ מתקדם</div>
+    </div>
+    <div id="tabPanel-location" class="tab-panel active">
+    <section class="mb-5">
+      <label class="block text-xs opacity-60 mb-1.5">עיר לסנכרון זמנים:</label>
+      <select id="citySelect" class="w-full rounded-xl px-3 py-2 text-sm"></select>
+
+      <button id="gpsBtn" class="gps-btn mt-2">📍 בחירה לפי מיקום (GPS)</button>
+      <div id="gpsStatus" class="text-[11px] opacity-50 mt-1 text-center"></div>
+      <button id="useCityListBtn" class="hidden mt-1 w-full text-[11px] underline opacity-60 hover:opacity-100">בחר מרשימת ערים במקום זאת</button>
+
+      <button id="syncNowBtn" class="mt-2 w-full rounded-xl py-2 text-xs font-semibold" style="background:var(--gold-primary); color:#1c132b;">עדכן זמנים עכשיו</button>
+      <div id="syncStatus" class="text-[11px] opacity-50 mt-1 text-center"></div>
+    </section>
+
+    <section class="mb-5">
+      <label class="block text-xs opacity-60 mb-1.5">מנהג הדלקת נרות (תוספת שבת):</label>
+      <select id="candleOffsetSelect" class="w-full rounded-xl px-3 py-2 text-sm">
+        <option value="20">20 דקות (מנהג כללי — ברירת מחדל)</option>
+        <option value="40">40 דקות (מנהג ירושלים)</option>
+        <option value="30">30 דקות (מנהג בני ברק)</option>
+        <option value="18">18 דקות (מנהג חו״ל)</option>
+      </select>
+    </section>
+
+    <section class="mb-5">
+      <div id="terrainWarningNote" class="hidden rounded-xl bg-amber-900/20 border border-amber-500/30 p-3 mb-3 text-[11px] leading-relaxed text-amber-200">
+        ⚠ אזור עם אי-ודאות הלכתית בחישוב זמנים (טופוגרפיה מורכבת) — מומלץ לוודא זמנים מול לוח זמנים מקומי ולתקן ידנית.
+      </div>
+      <label class="block text-xs opacity-60 mb-1.5">תיקון ידני למיקום שלך (דקות, +/-):</label>
+      <input id="manualCorrectionInput" type="number" step="1" placeholder="0" class="w-full rounded-xl px-3 py-2 text-sm">
+      <p class="text-[10px] opacity-40 mt-1.5 leading-relaxed">מספר חיובי = מאחר את הזמנים, שלילי = מקדים. משפיע על הדלקת נרות, צאת שבת, וצאת שבת (ר״ת) יחד. השאר 0 אם אינך יודע ערך מדויק.</p>
+    </section>
+
+    <section class="mb-5">
+      <label class="block text-xs opacity-60 mb-1.5">שיטת חישוב צאת שבת (ר״ת):</label>
+      <select id="rtMethodSelect" class="w-full rounded-xl px-3 py-2 text-sm">
+        <option value="rt72">רגיל / רבינו תם (72 דקות אחרי שקיעה)</option>
+        <option value="chazonish">חזון איש (90 דקות אחרי שקיעה)</option>
+        <option value="mga">מגן אברהם (96 דקות אחרי שקיעה)</option>
+        <option value="gra">גר״א / אופק ירושלים (58 דקות אחרי שקיעה)</option>
+      </select>
+      <p class="text-[10px] opacity-40 mt-1.5 leading-relaxed">הערכה כללית לצורך לוח זמנים ביתי בלבד — אינה פסק הלכה. לשימוש הלכה למעשה יש להתייעץ עם רב.</p>
+    </section>
+    </div>
+
+    <div id="tabPanel-audio" class="tab-panel">
+    <section class="mb-5">
+      <label class="block text-xs opacity-60 mb-2">שיר לכניסת שבת:</label>
+      <div id="slot-friday-mount"></div>
+      <div class="flex items-center gap-2 text-xs opacity-80 mt-2">
+        <span>להשמיע</span>
+        <input id="fridaySongOffset" type="number" min="1" max="90" value="10" class="w-16 rounded-lg px-2 py-1 text-center">
+        <span>דקות לפני הדלקת נרות</span>
+      </div>
+    </section>
+
+    <section class="mb-5">
+      <div class="flex items-center justify-between">
+        <span class="text-xs opacity-60">צפירת כניסת שבת (טון רציף)</span>
+        <div id="sirenToggle" class="toggle-track w-11 h-6 rounded-full relative cursor-pointer">
+          <div class="toggle-dot absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-white"></div>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-2">
+        <div id="sirenBuiltin" class="radio-pill flex-1 text-center rounded-lg py-1.5 text-xs">מובנית</div>
+        <div id="sirenUrl" class="radio-pill flex-1 text-center rounded-lg py-1.5 text-xs">קישור URL</div>
+        <div id="sirenLocal" class="radio-pill flex-1 text-center rounded-lg py-1.5 text-xs">קובץ מהמכשיר</div>
+      </div>
+      <input id="sirenUrlInput" type="url" placeholder="קישור לקובץ MP3" class="w-full rounded-xl px-3 py-2 text-sm mt-2 hidden">
+      <div id="sirenLocalWrap" class="hidden mt-2">
+        <input id="sirenFileInput" type="file" accept="audio/*" class="w-full text-xs">
+        <div id="sirenFileStatus" class="text-[11px] opacity-50 mt-1"></div>
+      </div>
+
+      <div class="mt-3">
+        <label class="block text-[11px] opacity-60 mb-1.5">משך זמן הצפירה (מובנית):</label>
+        <div class="flex gap-2">
+          <div id="sirenDur15" class="radio-pill flex-1 text-center rounded-lg py-1.5 text-xs">15 שנ׳</div>
+          <div id="sirenDur20" class="radio-pill flex-1 text-center rounded-lg py-1.5 text-xs">20 שנ׳</div>
+          <div id="sirenDur25" class="radio-pill flex-1 text-center rounded-lg py-1.5 text-xs">25 שנ׳</div>
+          <div id="sirenDur30" class="radio-pill flex-1 text-center rounded-lg py-1.5 text-xs">30 שנ׳</div>
+        </div>
+      </div>
+
+      <p class="text-[10px] opacity-40 mt-2 leading-relaxed">בסיום הצפירה, המערכת נכנסת אוטומטית ל"מצב שבת" (השתקה מלאה) עד מוצאי שבת. אם חל חג ביום שישי (כניסה ישירה לשבת), הצפירה תבוטל אוטומטית אותו שבוע.</p>
+    </section>
+
+    <section class="mb-5">
+      <label class="block text-xs opacity-60 mb-2">שיר למוצאי שבת:</label>
+      <div id="slot-motzash-mount"></div>
+      <div class="text-[11px] opacity-60 mb-1.5 mt-2">מתי להשמיע:</div>
+      <div class="flex gap-2">
+        <div id="motzashRegular" class="radio-pill flex-1 text-center rounded-lg py-1.5 text-xs">צאת שבת</div>
+        <div id="motzashRT" class="radio-pill flex-1 text-center rounded-lg py-1.5 text-xs">רבינו תם</div>
+        <div id="motzashBoth" class="radio-pill flex-1 text-center rounded-lg py-1.5 text-xs">בשניהם</div>
+      </div>
+      <p class="text-[10px] opacity-40 mt-2 leading-relaxed">אם שבת נכנסת ישירות לתוך חג (בלי הפסקה), שיר זה יידחה אוטומטית ויושמע רק במוצאי החג בפועל.</p>
+    </section>
+
+    <section class="mb-6">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs opacity-60">שירים נפרדים לכניסת חגים</span>
+        <div id="erevChagToggle" class="toggle-track w-11 h-6 rounded-full relative cursor-pointer">
+          <div class="toggle-dot absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-white"></div>
+        </div>
+      </div>
+      <div id="chagSongsContainer" class="flex flex-col gap-4"></div>
+    </section>
+    </div>
+
+    <div id="tabPanel-reminders" class="tab-panel">
+    <section class="mb-6">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs opacity-60">תזכורות לפני כניסת שבת</span>
+        <div id="remindersToggle" class="toggle-track w-11 h-6 rounded-full relative cursor-pointer">
+          <div class="toggle-dot absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-white"></div>
+        </div>
+      </div>
+      <div id="reminder-hour-mount"></div>
+      <div id="reminder-half-mount" class="mt-3"></div>
+      <p class="text-[10px] opacity-40 mt-2 leading-relaxed">באנר עם צליל דינג-דונג (כפוף להפעלת שמע) יופיע במסך הראשי; אם משיר מתנגן ברגע זה, הוא ינמיך זמנית וישוב לווליום המלא בסיום.</p>
+    </section>
+
+    <section class="mb-6">
+      <div class="flex items-center justify-between">
+        <span class="text-xs opacity-60">הצג ווידג'ט ספירה לאחור</span>
+        <div id="countdownToggle" class="toggle-track w-11 h-6 rounded-full relative cursor-pointer">
+          <div class="toggle-dot absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-white"></div>
+        </div>
+      </div>
+    </section>
+    </div>
+
+    <div id="tabPanel-advanced" class="tab-panel">
+    <section class="mb-6">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs opacity-60">מצב מערכת (לאבחון)</span>
+        <button id="refreshDiagnosticsBtn" class="text-[11px] underline opacity-60 hover:opacity-100">רענן</button>
+      </div>
+      <div id="diagnosticsBox" class="rounded-xl bg-white/[0.03] border border-white/10 p-3 text-[11px] leading-relaxed opacity-80 space-y-1"></div>
+    </section>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <button id="saveSettingsBtn" class="w-full rounded-xl py-3 font-bold text-sm" style="background:var(--gold-primary); color:#1c132b;">שמור הגדרות</button>
+      <button id="testModeBtn" class="w-full rounded-xl py-2.5 font-medium text-xs border" style="border-color:var(--gold-primary); color:var(--gold-primary);">הרץ מצב בדיקה (בודק את כל קובצי השמע)</button>
+    </div>
+    <div id="testModeStatus" class="text-xs text-center opacity-70 mt-2 font-semibold" style="color:var(--gold-primary);"></div>
+  </div>
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+/* ========================================================================
+   CONFIG
+======================================================================== */
+const CITIES = [
+  { label:"ירושלים", lat:31.7683, lng:35.2137, tzid:"Asia/Jerusalem", elev:754 },
+  { label:"תל אביב", lat:32.0853, lng:34.7818, tzid:"Asia/Jerusalem", elev:5 },
+  { label:"חיפה", lat:32.7940, lng:34.9896, tzid:"Asia/Jerusalem", elev:20 },
+  { label:"באר שבע", lat:31.2530, lng:34.7915, tzid:"Asia/Jerusalem", elev:280 },
+  { label:"אילת", lat:29.5581, lng:34.9482, tzid:"Asia/Jerusalem", elev:12 },
+  { label:"נתניה", lat:32.3215, lng:34.8532, tzid:"Asia/Jerusalem", elev:30 },
+  { label:"אשדוד", lat:31.8044, lng:34.6553, tzid:"Asia/Jerusalem", elev:30 },
+  { label:"אשקלון", lat:31.6688, lng:34.5742, tzid:"Asia/Jerusalem", elev:45 },
+  { label:"ראשון לציון", lat:31.9730, lng:34.7925, tzid:"Asia/Jerusalem", elev:30 },
+  { label:"פתח תקווה", lat:32.0917, lng:34.8878, tzid:"Asia/Jerusalem", elev:51 },
+  { label:"ראש העין", lat:32.0956, lng:34.9569, tzid:"Asia/Jerusalem", elev:60 },
+  { label:"בני ברק", lat:32.0807, lng:34.8338, tzid:"Asia/Jerusalem", elev:20 },
+  { label:"מודיעין", lat:31.8928, lng:35.0095, tzid:"Asia/Jerusalem", elev:224 },
+  { label:"רחובות", lat:31.8928, lng:34.8113, tzid:"Asia/Jerusalem", elev:60 },
+  { label:"הרצליה", lat:32.1663, lng:34.8434, tzid:"Asia/Jerusalem", elev:30 },
+  { label:"רעננה", lat:32.1847, lng:34.8706, tzid:"Asia/Jerusalem", elev:40 },
+  { label:"כפר סבא", lat:32.1750, lng:34.9070, tzid:"Asia/Jerusalem", elev:47 },
+  { label:"נצרת", lat:32.6996, lng:35.3035, tzid:"Asia/Jerusalem", elev:350 },
+  { label:"טבריה", lat:32.7922, lng:35.5312, tzid:"Asia/Jerusalem", elev:null, uncertainTerrain:true },
+  { label:"צפת", lat:32.9646, lng:35.4960, tzid:"Asia/Jerusalem", elev:800 },
+  { label:"עפולה", lat:32.6078, lng:35.2897, tzid:"Asia/Jerusalem", elev:60 },
+  { label:"כרמיאל", lat:32.9186, lng:35.2951, tzid:"Asia/Jerusalem", elev:330 },
+  { label:"נהריה", lat:33.0059, lng:35.0938, tzid:"Asia/Jerusalem", elev:5 },
+  { label:"דימונה", lat:31.0680, lng:35.0327, tzid:"Asia/Jerusalem", elev:580 },
+  { label:"קריית שמונה", lat:33.2074, lng:35.5695, tzid:"Asia/Jerusalem", elev:150 },
+  { label:"חולון", lat:32.0167, lng:34.7792, tzid:"Asia/Jerusalem", elev:30 },
+  { label:"בת ים", lat:32.0231, lng:34.7503, tzid:"Asia/Jerusalem", elev:15 },
+  { label:"בית שאן", lat:32.4969, lng:35.4989, tzid:"Asia/Jerusalem", elev:null, uncertainTerrain:true }
+];
+
+const RT_METHOD_MINUTES = { rt72:72, chazonish:90, mga:96, gra:58 };
+
+const CHAG_KEYS = ["roshhashana","yomkippur","sukkot","pesach","shavuot"];
+const CHAG_LABELS = {
+  roshhashana: "ראש השנה",
+  yomkippur: "יום כיפור",
+  sukkot: "סוכות (וכן שמח״ת/שמע״צ)",
+  pesach: "פסח",
+  shavuot: "שבועות"
+};
+const HOLIDAY_KEYWORDS = {
+  roshhashana: ["Rosh Hashana"],
+  yomkippur: ["Yom Kippur"],
+  sukkot: ["Sukkot", "Shmini Atzeret", "Simchat Torah"],
+  pesach: ["Pesach"],
+  shavuot: ["Shavuot"]
+};
+
+function defaultChagSongs(){
+  const obj = {};
+  CHAG_KEYS.forEach(k => obj[k] = { source:"youtube", id:"", filename:"" });
+  return obj;
+}
+
+const REMINDER_DEFAULT_ITEMS = ["כיבוי אור במקרר","הפעלת שעוני שבת","הפעלת מיחם","סידור נרות שבת","הפעלת פלטת שבת"];
+function defaultReminders(){
+  return {
+    enabled: true,
+    hour: { selected: [], custom: [] },
+    half: { selected: [], custom: [] }
+  };
+}
+
+const DEFAULT_SETTINGS = {
+  cityIndex: 0,
+  candleOffset: 20,
+  manualCorrectionMinutes: 0,
+  useCustomLocation: false,
+  customLocation: null,
+  fridaySongSource: "youtube",
+  fridaySongId: "",
+  fridaySongFilename: "",
+  fridaySongOffset: 10,
+  sirenEnabled: true,
+  sirenType: "builtin", // builtin | url | local
+  sirenUrl: "",
+  sirenDuration: 15,
+  motzashSongSource: "youtube",
+  motzashSongId: "",
+  motzashSongFilename: "",
+  motzashTiming: "regular",
+  showCountdown: true,
+  rtMethod: "rt72",
+  erevChagEnabled: false,
+  chagSongs: defaultChagSongs(),
+  reminders: defaultReminders(),
+  audioUnlocked: false
+};
+
+const SETTINGS_KEY = "shabbatClock_settings_v8";
+const CACHE_KEY = "shabbatClock_timesCache_v8";
+
+/* ========================================================================
+   STATE
+======================================================================== */
+let settings = loadSettings();
+let times = {
+  candleLighting:null, sunsetFriday:null, havdalah:null, rabbeinuTam:null,
+  parasha:"", parashaEng:"", fridayIsYomTov:false,
+  nextErevChag:null, chagExitTime:null
+};
+let timesAreStale = true;
+let ytPlayer = null, ytReady = false, pendingYtAction = null;
+let audioCtx = null;
+let shabbatMuteActive = false;
+let simRunning = false;
+let refreshedAfterShabbat = false;
+let firedFlags = { fridaySong:false, siren:false, motzashRegular:false, motzashRT:false };
+let erevChagFired = false;
+let chagExitFired = false;
+let wakeLock = null;
+let lastHebDateKey = null;
+
+/* ========================================================================
+   SETTINGS / CACHE PERSISTENCE
+======================================================================== */
+function loadSettings(){
+  try{
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if(!raw) return {...DEFAULT_SETTINGS, chagSongs: defaultChagSongs(), reminders: defaultReminders()};
+    const parsed = JSON.parse(raw);
+    const pr = parsed.reminders || {};
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      chagSongs: { ...defaultChagSongs(), ...(parsed.chagSongs || {}) },
+      reminders: {
+        enabled: pr.enabled !== false,
+        hour: { selected: (pr.hour && pr.hour.selected) || [], custom: (pr.hour && pr.hour.custom) || [] },
+        half: { selected: (pr.half && pr.half.selected) || [], custom: (pr.half && pr.half.custom) || [] }
+      }
+    };
+  }catch(e){ return {...DEFAULT_SETTINGS, chagSongs: defaultChagSongs(), reminders: defaultReminders()}; }
+}
+function saveSettings(){ try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }catch(e){} }
+
+function saveTimesCache(){
+  try{
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      candleLighting: times.candleLighting ? times.candleLighting.toISOString() : null,
+      sunsetFriday: times.sunsetFriday ? times.sunsetFriday.toISOString() : null,
+      havdalah: times.havdalah ? times.havdalah.toISOString() : null,
+      rabbeinuTam: times.rabbeinuTam ? times.rabbeinuTam.toISOString() : null,
+      parasha: times.parasha, parashaEng: times.parashaEng,
+      fridayIsYomTov: times.fridayIsYomTov,
+      nextErevChag: times.nextErevChag ? { date: times.nextErevChag.date.toISOString(), title: times.nextErevChag.title, holidayKey: times.nextErevChag.holidayKey } : null,
+      chagExitTime: times.chagExitTime ? times.chagExitTime.toISOString() : null,
+      cachedAt: new Date().toISOString()
+    }));
+  }catch(e){}
+}
+function loadTimesCache(){
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(!raw) return null;
+    const d = JSON.parse(raw);
+    return {
+      candleLighting: d.candleLighting ? new Date(d.candleLighting) : null,
+      sunsetFriday: d.sunsetFriday ? new Date(d.sunsetFriday) : null,
+      havdalah: d.havdalah ? new Date(d.havdalah) : null,
+      rabbeinuTam: d.rabbeinuTam ? new Date(d.rabbeinuTam) : null,
+      parasha: d.parasha, parashaEng: d.parashaEng,
+      fridayIsYomTov: !!d.fridayIsYomTov,
+      nextErevChag: d.nextErevChag ? { date: new Date(d.nextErevChag.date), title: d.nextErevChag.title, holidayKey: d.nextErevChag.holidayKey } : null,
+      chagExitTime: d.chagExitTime ? new Date(d.chagExitTime) : null,
+      cachedAt: d.cachedAt ? new Date(d.cachedAt) : null
+    };
+  }catch(e){ return null; }
+}
+
+/* ========================================================================
+   UTIL
+======================================================================== */
+function pad(n){ return String(Math.floor(n)).padStart(2,"0"); }
+function extractYouTubeId(input){
+  if(!input) return "";
+  input = input.trim();
+  if(/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
+  const m = input.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : "";
+}
+function fmtHM(d){ return d ? d.toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit",hour12:false}) : "--:--"; }
+function fmtHMS(d){ return d.toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}); }
+function dateKey(d){ return d.toISOString().slice(0,10); }
+
+function sanitizeParashaName(raw){
+  if(!raw) return "";
+  return raw.trim().replace(/^פרש(?:ת|יות)\s+/,"").trim();
+}
+
+/* ========================================================================
+   INDEXEDDB — local audio file storage (works fully offline, no YouTube needed)
+======================================================================== */
+const AUDIO_DB_NAME = "shabbatClockAudioDB";
+const AUDIO_STORE = "audioFiles";
+let audioDbPromise = null;
+function openAudioDB(){
+  if(audioDbPromise) return audioDbPromise;
+  audioDbPromise = new Promise((resolve, reject)=>{
+    if(!("indexedDB" in window)){ reject(new Error("no indexeddb")); return; }
+    const req = indexedDB.open(AUDIO_DB_NAME, 1);
+    req.onupgradeneeded = ()=>{ req.result.createObjectStore(AUDIO_STORE, { keyPath:"slot" }); };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+  return audioDbPromise;
+}
+async function saveAudioFile(slot, file){
+  const db = await openAudioDB();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(AUDIO_STORE, "readwrite");
+    tx.objectStore(AUDIO_STORE).put({ slot, blob: file, filename: file.name });
+    tx.oncomplete = ()=> resolve(true);
+    tx.onerror = ()=> reject(tx.error);
+  });
+}
+async function loadAudioFile(slot){
+  const db = await openAudioDB();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(AUDIO_STORE, "readonly");
+    const req = tx.objectStore(AUDIO_STORE).get(slot);
+    req.onsuccess = ()=> resolve(req.result || null);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+
+/* ========================================================================
+   SONG SLOTS — one generic system backs Friday / Motzash / each of the 5 chag songs
+======================================================================== */
+const SONG_SLOTS = [
+  { key:"friday", chag:false, dbSlot:"friday", label:"שיר כניסת שבת" },
+  { key:"motzash", chag:false, dbSlot:"motzash", label:"שיר מוצאי שבת" },
+  ...CHAG_KEYS.map(k => ({ key:k, chag:true, dbSlot:"chag_"+k, label:CHAG_LABELS[k] }))
+];
+
+function getSlotValue(slot){
+  if(slot.chag) return settings.chagSongs[slot.key];
+  return {
+    source: settings[slot.key+"SongSource"],
+    id: settings[slot.key+"SongId"],
+    filename: settings[slot.key+"SongFilename"]
+  };
+}
+function setSlotValue(slot, value){
+  if(slot.chag){ settings.chagSongs[slot.key] = value; return; }
+  settings[slot.key+"SongSource"] = value.source;
+  settings[slot.key+"SongId"] = value.id;
+  settings[slot.key+"SongFilename"] = value.filename;
+}
+
+function slotDomIds(slot){
+  const p = "slot_"+slot.key+"_";
+  return {
+    ytPill: p+"yt", localPill: p+"local", builtinPill: p+"builtin",
+    ytInput: p+"ytinput", fileInput: p+"file", fileStatus: p+"filestatus"
+  };
+}
+
+/* Bundled songs: the files sit next to this page (songs/friday.mp3, songs/motzash.mp3; inside the
+   Android app they are packaged in the app). Choosing "שיר מובנה" imports the bundled file into the
+   same local-file storage everything else already uses, so playback needs no extra code. */
+const BUNDLED_SONGS = {
+  friday:  { url:"songs/friday.mp3",  name:"שיר כניסת שבת (מובנה).mp3" },
+  motzash: { url:"songs/motzash.mp3", name:"שיר מוצאי שבת (מובנה).mp3" }
+};
+/* Single-file build: when a JSON script element with id "bundledSongsData" exists, the songs come
+   from it as data URIs. Otherwise they are fetched from songs/ next to the page (Android app assets). */
+function bundledSongSource(slot, b){
+  try{
+    const el = document.getElementById("bundledSongsData");
+    if(el && el.textContent){
+      const d = JSON.parse(el.textContent);
+      if(d && d[slot.key]) return d[slot.key];
+    }
+  }catch(e){}
+  return b.url;
+}
+function isBundledSelected(slot, val){
+  const b = BUNDLED_SONGS[slot.key];
+  return !!(b && !slot.chag && val && val.source === "local" && val.filename === b.name);
+}
+async function importBundledSong(slot){
+  const b = BUNDLED_SONGS[slot.key];
+  if(!b || slot.chag) return false;
+  const ids = slotDomIds(slot);
+  const wrap = document.getElementById(ids.fileInput+"_wrap");
+  const status = document.getElementById(ids.fileStatus);
+  if(wrap) wrap.classList.remove("hidden");
+  if(status) status.textContent = "טוען את השיר המובנה...";
+  try{
+    const res = await fetch(bundledSongSource(slot, b));
+    if(!res.ok) throw new Error("http " + res.status);
+    const blob = await res.blob();
+    if(!blob || !blob.size) throw new Error("empty");
+    const mime = (blob.type && blob.type.indexOf("audio") === 0) ? blob.type : "audio/mpeg";
+    await saveAudioFile(slot.dbSlot, new File([blob], b.name, { type: mime }));
+    const val = getSlotValue(slot) || {};
+    setSlotValue(slot, { source:"local", id: val.id || "", filename: b.name });
+    saveSettings();
+    renderSlotUI(slot);
+    return true;
+  }catch(err){
+    if(status) status.textContent = "טעינת השיר המובנה נכשלה. נסה שוב, או בחר קובץ מהמכשיר.";
+    return false;
+  }
+}
+
+function buildSlotUI(container, slot){
+  const ids = slotDomIds(slot);
+  const wrap = document.createElement("div");
+  wrap.className = "rounded-xl p-2.5" + (slot.chag ? " bg-white/[0.03] border border-white/10" : "");
+  wrap.innerHTML = `
+    ${slot.chag ? `<div class="text-[11px] opacity-70 mb-1.5">${slot.label}</div>` : ""}
+    <div class="flex gap-2">
+      <div id="${ids.ytPill}" class="radio-pill flex-1 text-center rounded-lg py-1.5 text-xs">YouTube</div>
+      <div id="${ids.localPill}" class="radio-pill flex-1 text-center rounded-lg py-1.5 text-xs">קובץ מהמכשיר</div>
+      ${BUNDLED_SONGS[slot.key] && !slot.chag ? `<div id="${ids.builtinPill}" class="radio-pill flex-1 text-center rounded-lg py-1.5 text-xs">שיר מובנה</div>` : ""}
+    </div>
+    <input id="${ids.ytInput}" type="text" placeholder="קישור או ID מיוטיוב" class="w-full rounded-xl px-3 py-2 text-sm mt-2">
+    <div id="${ids.fileInput}_wrap" class="hidden mt-2">
+      <input id="${ids.fileInput}" type="file" accept="audio/*" class="w-full text-xs">
+      <div id="${ids.fileStatus}" class="text-[11px] opacity-50 mt-1"></div>
+      <p class="text-[10px] opacity-40 mt-1">מומלץ לאמינות מרבית — לא תלוי ברשת או בהטמעת YouTube.</p>
+    </div>
+  `;
+  container.appendChild(wrap);
+}
+
+function renderSlotUI(slot){
+  const ids = slotDomIds(slot);
+  const val = getSlotValue(slot) || { source:"youtube", id:"", filename:"" };
+  document.getElementById(ids.ytInput).value = val.id || "";
+  const bundled = isBundledSelected(slot, val);
+  document.getElementById(ids.ytPill).classList.toggle("selected", val.source !== "local");
+  document.getElementById(ids.localPill).classList.toggle("selected", val.source === "local" && !bundled);
+  const bp = document.getElementById(ids.builtinPill);
+  if(bp) bp.classList.toggle("selected", bundled);
+  document.getElementById(ids.fileInput+"_wrap").classList.toggle("hidden", val.source !== "local");
+  document.getElementById(ids.fileStatus).textContent = val.filename ? ("קובץ נטען: " + val.filename) : "לא הועלה קובץ";
+}
+
+function updateDiagnostics(){
+  const box = document.getElementById("diagnosticsBox");
+  const lines = [
+    "סנכרון אחרון: " + (timesAreStale ? "לא מעודכן" : "תקין") + (times.candleLighting ? "" : " (אין עדיין נתונים)"),
+    "נגן YouTube: " + (ytReady ? "מוכן" : "לא מוכן"),
+    "AudioContext: " + (audioCtx ? audioCtx.state : "לא אותחל"),
+    "אימות שמע: " + (settings.audioUnlocked ? "אומת" : "לא אומת בסשן הנוכחי"),
+    "שגיאת YouTube אחרונה: " + (lastYtErrorMessage || "אין")
+  ];
+  box.innerHTML = lines.map(l => `<div>${l}</div>`).join("");
+}
+
+function bindSlotUI(slot){
+  const ids = slotDomIds(slot);
+  document.getElementById(ids.ytPill).onclick = ()=>{
+    const val = getSlotValue(slot);
+    setSlotValue(slot, { ...val, source:"youtube" });
+    renderSlotUI(slot);
+  };
+  document.getElementById(ids.localPill).onclick = ()=>{
+    const val = getSlotValue(slot);
+    setSlotValue(slot, { ...val, source:"local" });
+    renderSlotUI(slot);
+  };
+  const bpEl = document.getElementById(ids.builtinPill);
+  if(bpEl) bpEl.onclick = ()=>{ importBundledSong(slot); };
+  document.getElementById(ids.fileInput).onchange = async (e)=>{
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    try{
+      await saveAudioFile(slot.dbSlot, file);
+      const val = getSlotValue(slot);
+      setSlotValue(slot, { ...val, source:"local", filename:file.name });
+      saveSettings();
+      renderSlotUI(slot);
+    }catch(err){
+      document.getElementById(ids.fileStatus).textContent = "שגיאה בשמירת הקובץ (הדפדפן חוסם אחסון מקומי?)";
+    }
+  };
+}
+
+function readSlotFromForm(slot){
+  const ids = slotDomIds(slot);
+  const ytVal = document.getElementById(ids.ytInput).value;
+  const bpSel = document.getElementById(ids.builtinPill);
+  const source = (document.getElementById(ids.localPill).classList.contains("selected") ||
+                  (bpSel && bpSel.classList.contains("selected"))) ? "local" : "youtube";
+  const prev = getSlotValue(slot) || {};
+  setSlotValue(slot, {
+    source,
+    id: extractYouTubeId(ytVal) || ytVal.trim(),
+    filename: prev.filename || ""
+  });
+}
+
+function initSongSlotsUI(){
+  const fridayMount = document.getElementById("slot-friday-mount");
+  const motzashMount = document.getElementById("slot-motzash-mount");
+  const chagMount = document.getElementById("chagSongsContainer");
+
+  SONG_SLOTS.forEach(slot=>{
+    if(slot.key === "friday") buildSlotUI(fridayMount, slot);
+    else if(slot.key === "motzash") buildSlotUI(motzashMount, slot);
+    else buildSlotUI(chagMount, slot);
+    bindSlotUI(slot);
+  });
+}
+
+/* ========================================================================
+   REMINDER CHECKPOINTS — hour-before / half-hour-before, each with a default
+   checklist (checkboxes) plus free-text custom items.
+======================================================================== */
+function buildReminderUI(container, key, title){
+  const wrap = document.createElement("div");
+  wrap.className = "rounded-xl p-3 bg-white/[0.03] border border-white/10";
+  const checkboxesHtml = REMINDER_DEFAULT_ITEMS.map(item => `
+    <label class="flex items-center gap-2 text-xs py-1 cursor-pointer">
+      <input type="checkbox" data-reminder-item="${item}" class="reminder-default-checkbox">
+      <span>${item}</span>
+    </label>
+  `).join("");
+  wrap.innerHTML = `
+    <div class="text-xs font-semibold mb-1.5" style="color:var(--gold-primary);">${title}</div>
+    ${checkboxesHtml}
+    <div class="flex gap-2 mt-2">
+      <input type="text" id="reminder-${key}-custom-input" placeholder="תזכורת משלך..." class="flex-1 rounded-lg px-2 py-1.5 text-xs">
+      <button id="reminder-${key}-custom-add" class="rounded-lg px-3 text-xs font-semibold" style="background:var(--gold-primary); color:#1c132b;">+ הוסף</button>
+    </div>
+    <div id="reminder-${key}-custom-list" class="mt-2 flex flex-col gap-1"></div>
+  `;
+  container.appendChild(wrap);
+}
+
+function renderReminderUI(key){
+  const container = document.getElementById("reminder-"+key+"-mount");
+  container.querySelectorAll(".reminder-default-checkbox").forEach(cb=>{
+    cb.checked = settings.reminders[key].selected.includes(cb.dataset.reminderItem);
+  });
+  const listEl = document.getElementById("reminder-"+key+"-custom-list");
+  listEl.innerHTML = "";
+  settings.reminders[key].custom.forEach((text, idx)=>{
+    const row = document.createElement("div");
+    row.className = "flex items-center justify-between text-xs bg-white/5 rounded-lg px-2 py-1";
+    row.innerHTML = `<span>${text}</span><button data-idx="${idx}" class="reminder-custom-del opacity-60 hover:opacity-100 px-1">✕</button>`;
+    listEl.appendChild(row);
+  });
+  listEl.querySelectorAll(".reminder-custom-del").forEach(btn=>{
+    btn.onclick = ()=>{
+      settings.reminders[key].custom.splice(parseInt(btn.dataset.idx,10),1);
+      saveSettings();
+      renderReminderUI(key);
+    };
+  });
+}
+
+function bindReminderUI(key){
+  const container = document.getElementById("reminder-"+key+"-mount");
+  container.querySelectorAll(".reminder-default-checkbox").forEach(cb=>{
+    cb.onchange = ()=>{
+      const item = cb.dataset.reminderItem;
+      const arr = settings.reminders[key].selected;
+      const i = arr.indexOf(item);
+      if(cb.checked && i===-1) arr.push(item);
+      else if(!cb.checked && i!==-1) arr.splice(i,1);
+      saveSettings();
+    };
+  });
+  document.getElementById("reminder-"+key+"-custom-add").onclick = ()=>{
+    const input = document.getElementById("reminder-"+key+"-custom-input");
+    const text = input.value.trim();
+    if(!text) return;
+    settings.reminders[key].custom.push(text);
+    input.value = "";
+    saveSettings();
+    renderReminderUI(key);
+  };
+}
+
+function initReminderUI(){
+  buildReminderUI(document.getElementById("reminder-hour-mount"), "hour", "שעה לפני כניסת שבת");
+  buildReminderUI(document.getElementById("reminder-half-mount"), "half", "חצי שעה לפני כניסת שבת");
+  bindReminderUI("hour");
+  bindReminderUI("half");
+}
+
+/* ========================================================================
+   HEBCAL + ZMANIM (real halachic times)
+======================================================================== */
+async function fetchWeeklyTimes(){
+  const city = getActiveCity();
+  document.getElementById("cityName").textContent = city.label;
+  document.getElementById("terrainBadge").classList.toggle("hidden", !city.uncertainTerrain);
+  document.getElementById("syncStatus").textContent = "מסנכרן זמנים...";
+  setStatusDot("syncing");
+
+  try{
+    const offset = settings.candleOffset || 20;
+    const shabbatUrl = `https://www.hebcal.com/shabbat?cfg=json&geo=pos&latitude=${city.lat}&longitude=${city.lng}&tzid=${encodeURIComponent(city.tzid)}&M=on&b=${offset}&lg=h${elevParams(city)}`;
+    const res = await fetch(shabbatUrl);
+    const data = await res.json();
+    const items = data.items || [];
+
+    const candlesItem = items.find(i=>i.category==="candles");
+    const havdalahItem = items.find(i=>i.category==="havdalah");
+    const parashaItem = items.find(i=>i.category==="parashat");
+
+    if(!candlesItem || !havdalahItem) throw new Error("no items");
+
+    times.candleLighting = new Date(candlesItem.date);
+    times.havdalah = new Date(havdalahItem.date);
+    times.parasha = sanitizeParashaName(parashaItem ? (parashaItem.hebrew || parashaItem.title) : "");
+    times.parashaEng = parashaItem ? parashaItem.title : "";
+
+    // Dates come from the candle/havdalah items themselves (local date in the item's own ISO string),
+    // NOT from data.range — range.end can land on Sunday in a post-Shabbat sync, which made
+    // Rabbeinu Tam jump a full 24 hours.
+    const fridayDate = candlesItem.date.slice(0,10);
+    const saturdayDate = havdalahItem.date.slice(0,10);
+
+    const [sunFri, sunSat, fridayIsYomTov] = await Promise.all([
+      fetchZmanimSunset(city, fridayDate),
+      fetchZmanimSunset(city, saturdayDate),
+      checkFridayIsYomTov(fridayDate)
+    ]);
+
+    times.sunsetFriday = sunFri;
+    const rtMinutes = RT_METHOD_MINUTES[settings.rtMethod] || 72;
+    const prevRT = times.rabbeinuTam;
+    times.fridayIsYomTov = fridayIsYomTov;
+
+    const corrMin = settings.manualCorrectionMinutes || 0;
+    if(corrMin !== 0){
+      times.candleLighting = new Date(times.candleLighting.getTime() + corrMin*60000);
+      times.havdalah = new Date(times.havdalah.getTime() + corrMin*60000);
+    }
+    const rtCalc = sunSat ? new Date(sunSat.getTime() + (rtMinutes + corrMin)*60000) : null;
+    times.rabbeinuTam = pickRabbeinuTam(rtCalc, times.havdalah, prevRT);
+
+    timesAreStale = false;
+    resetWeekFlags();
+    renderTimes();
+    setStatusDot("ok");
+    document.getElementById("yomtovBadge").classList.toggle("hidden", !fridayIsYomTov);
+    document.getElementById("syncStatus").textContent = "עודכן: " + new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"});
+
+    // Both of these are independent lookups and don't block the core weekly times from displaying.
+    await Promise.all([
+      fetchUpcomingErevChag(city),
+      checkHavdalahFlowsIntoChag(city, saturdayDate)
+    ]);
+    saveTimesCache();
+  }catch(err){
+    console.error(err);
+    document.getElementById("syncStatus").textContent = "שגיאה בסנכרון — משתמש בזמנים האחרונים שנשמרו";
+    timesAreStale = true;
+    setStatusDot("stale");
+  }
+}
+
+function getActiveCity(){
+  if(settings.useCustomLocation && settings.customLocation && settings.customLocation.lat != null){
+    return settings.customLocation;
+  }
+  return CITIES[settings.cityIndex] || CITIES[0];
+}
+
+/* Hebcal only accepts elev in the 1-9000 range and ignores it entirely unless ue=on is also
+   passed. Below-sea-level locations (elev:null) can't be represented this way at all — those
+   rely on the terrain-uncertainty warning + manual correction instead. */
+function elevParams(city){
+  if(city && typeof city.elev === "number" && city.elev >= 1 && city.elev <= 9000){
+    return `&elev=${Math.round(city.elev)}&ue=on`;
+  }
+  return "";
+}
+
+async function fetchZmanimSunset(city, dateStr){
+  try{
+    const url = `https://www.hebcal.com/zmanim?cfg=json&latitude=${city.lat}&longitude=${city.lng}&tzid=${encodeURIComponent(city.tzid)}&date=${dateStr}${elevParams(city)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return (data.times && data.times.sunset) ? new Date(data.times.sunset) : null;
+  }catch(e){ return null; }
+}
+
+/* Sanity check: Rabbeinu Tam must fall after Havdalah and within 3 hours of it. A calculated value
+   outside that window is a bad lookup (wrong day) — fall back to the previous good value, else none. */
+function pickRabbeinuTam(calc, havdalah, prev){
+  const ok = d => d instanceof Date && !isNaN(d) && havdalah instanceof Date &&
+    d.getTime() > havdalah.getTime() && d.getTime() - havdalah.getTime() <= 3*3600*1000;
+  if(ok(calc)) return calc;
+  if(ok(prev)) return prev;
+  return null;
+}
+
+async function checkFridayIsYomTov(dateStr){
+  try{
+    const url = `https://www.hebcal.com/hebcal?cfg=json&start=${dateStr}&end=${dateStr}&maj=on&min=off&mod=off&nx=off`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const items = data.items || [];
+    return items.some(i => i.yomtov === true);
+  }catch(e){ return false; }
+}
+
+/* Finds which (if any) of our 5 tracked holidays a given date belongs to. */
+function matchHolidayKey(holidayItems, date){
+  const targetDay = new Date(date); targetDay.setHours(0,0,0,0);
+  for(const item of holidayItems){
+    const itemDay = new Date(item.date); itemDay.setHours(0,0,0,0);
+    if(Math.abs(itemDay - targetDay) > 86400000) continue;
+    for(const [key, keywords] of Object.entries(HOLIDAY_KEYWORDS)){
+      if(keywords.some(k => (item.title||"").includes(k))) return key;
+    }
+  }
+  return null;
+}
+
+/* Looks 14 days ahead for the next candle-lighting event that ISN'T the regular Friday/Shabbat
+   one (Hebcal's "candles" category already covers both Erev Shabbat and Erev Chag), and tags it
+   with which of our 5 tracked holidays it belongs to (if any). */
+async function fetchUpcomingErevChag(city){
+  try{
+    const now = new Date();
+    const startStr = dateKey(now);
+    const endStr = dateKey(new Date(now.getTime() + 14*24*3600*1000));
+    const offset = settings.candleOffset || 20;
+    const url = `https://www.hebcal.com/hebcal?cfg=json&start=${startStr}&end=${endStr}&c=on&maj=on&min=off&mod=off&nx=off&geo=pos&latitude=${city.lat}&longitude=${city.lng}&tzid=${encodeURIComponent(city.tzid)}&b=${offset}${elevParams(city)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const items = data.items || [];
+    const holidayItems = items.filter(i => i.category === "holiday").map(i => ({ date: new Date(i.date), title: i.title }));
+
+    const candidate = items
+      .filter(i => i.category === "candles")
+      .map(i => ({ date: new Date(i.date), title: i.title }))
+      .filter(c => c.date > now && c.date.getDay() !== 5)
+      .sort((a,b)=> a.date - b.date)[0] || null;
+
+    if(candidate){
+      candidate.holidayKey = matchHolidayKey(holidayItems, candidate.date);
+      if(!times.nextErevChag || times.nextErevChag.date.getTime() !== candidate.date.getTime()){
+        erevChagFired = false;
+      }
+    }
+    times.nextErevChag = candidate;
+  }catch(e){ /* non-critical: keep whatever was previously known */ }
+}
+
+/* Detects "Shabbat flows directly into Chag" (no weekday gap): if the day right after Saturday
+   is itself Yom Tov, the regular Motzash song must wait for the actual end of that Yom Tov run
+   (walking forward through any consecutive Yom Tov days) instead of firing at the normal Havdalah. */
+async function checkHavdalahFlowsIntoChag(city, saturdayDateStr){
+  try{
+    const saturday = new Date(saturdayDateStr + "T00:00:00");
+    const lookEnd = dateKey(new Date(saturday.getTime() + 5*24*3600*1000));
+    const url = `https://www.hebcal.com/hebcal?cfg=json&start=${saturdayDateStr}&end=${lookEnd}&maj=on&min=off&mod=off&nx=off`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const items = data.items || [];
+
+    const isYomTovOn = (dStr)=> items.some(i => i.date.slice(0,10) === dStr && i.yomtov === true);
+
+    const sunday = new Date(saturday.getTime() + 24*3600*1000);
+    if(!isYomTovOn(dateKey(sunday))){
+      times.chagExitTime = null;
+      chagExitFired = false;
+      return;
+    }
+
+    let lastYomTovDate = sunday;
+    let cursor = sunday;
+    for(let i=0;i<5;i++){
+      const nextDay = new Date(cursor.getTime() + 24*3600*1000);
+      if(!isYomTovOn(dateKey(nextDay))) break;
+      lastYomTovDate = nextDay;
+      cursor = nextDay;
+    }
+
+    const sunset = await fetchZmanimSunset(city, dateKey(lastYomTovDate));
+    const newExit = sunset ? new Date(sunset.getTime() + 20*60000) : null; // standard ~20 min nightfall approximation
+
+    if(newExit && (!times.chagExitTime || times.chagExitTime.getTime() !== newExit.getTime())){
+      chagExitFired = false;
+    }
+    times.chagExitTime = newExit;
+  }catch(e){ /* non-critical: keep whatever was previously known */ }
+}
+
+async function fetchHebrewDateIfNeeded(now){
+  const key = now.getFullYear() + "-" + (now.getMonth()+1) + "-" + now.getDate();
+  if(key === lastHebDateKey) return;
+  lastHebDateKey = key;
+  try{
+    const y = now.getFullYear(), m = now.getMonth()+1, d = now.getDate();
+    const res = await fetch(`https://www.hebcal.com/converter?cfg=json&gy=${y}&gm=${m}&gd=${d}&g2h=1`);
+    const data = await res.json();
+    if(data && data.hebrew){
+      const clean = data.hebrew.replace(/[\u0591-\u05C7]/g,"");
+      document.getElementById("hebrewDateLine").textContent = clean;
+    }
+  }catch(e){ /* non-critical: keep previous value */ }
+}
+
+/* Bug fix: the independent 6-hour periodic refresh has no idea when Havdalah/RT/chag-exit
+   actually falls, and could otherwise overwrite times.havdalah/rabbeinuTam with NEXT week's
+   values in the exact 60-second window a trigger is checking against — silently skipping
+   the Motzash song. Skipping the periodic refresh here is safe: the dedicated 3-second-
+   delayed refresh after Havdalah already covers the real refresh need. */
+function isNearCriticalTrigger(now){
+  const points = [
+    times.candleLighting, times.havdalah, times.rabbeinuTam, times.chagExitTime,
+    times.nextErevChag ? times.nextErevChag.date : null
+  ].filter(Boolean);
+  return points.some(p => Math.abs(now - p) < 5*60000);
+}
+
+function resetWeekFlags(){
+  firedFlags = { fridaySong:false, siren:false, motzashRegular:false, motzashRT:false };
+  refreshedAfterShabbat = false;
+  remindersFired = { hour:false, half:false };
+}
+
+function setStatusDot(state){
+  const dot = document.getElementById("statusDot");
+  dot.classList.remove("bg-emerald-400","bg-amber-400","bg-neutral-500","animate-pulse");
+  if(state === "ok"){ dot.classList.add("bg-emerald-400","animate-pulse"); }
+  else if(state === "syncing"){ dot.classList.add("bg-amber-400","animate-pulse"); }
+  else { dot.classList.add("bg-neutral-500"); }
+}
+
+function renderTimes(){
+  document.getElementById("timeCandles").textContent = fmtHM(times.candleLighting);
+  document.getElementById("timeSunset").textContent = fmtHM(times.sunsetFriday);
+  document.getElementById("timeHavdalah").textContent = fmtHM(times.havdalah);
+  document.getElementById("timeRT").textContent = fmtHM(times.rabbeinuTam);
+  document.getElementById("parashaTitle").textContent = times.parasha ? ("פרשת " + times.parasha) : "";
+}
+
+/* ========================================================================
+   YOUTUBE PLAYER
+======================================================================== */
+let onPlayingUnmuteCallback = null;
+
+let lastYtErrorMessage = "";
+let ytErrorRetryDone = false;
+let lastYtVideoId = null;
+
+const YT_ERROR_MESSAGES = {
+  2: "קישור לא תקין",
+  5: "שגיאת נגן",
+  100: "הסרטון לא נמצא (הוסר או פרטי)",
+  101: "בעל הערוץ חסם הטמעה של הסרטון הזה",
+  150: "בעל הערוץ חסם הטמעה של הסרטון הזה"
+};
+
+function onYouTubeIframeAPIReady(){
+  ytPlayer = new YT.Player('ytPlayer', {
+    height:'1', width:'1',
+    playerVars:{ autoplay:0, controls:0, playsinline:1 },
+    events:{
+      onReady: ()=>{ ytReady = true; if(pendingYtAction){ pendingYtAction(); pendingYtAction=null; } },
+      onStateChange: (e)=>{
+        if(e.data === YT.PlayerState.PLAYING && onPlayingUnmuteCallback){
+          const cb = onPlayingUnmuteCallback;
+          onPlayingUnmuteCallback = null;
+          cb();
+        }
+      },
+      onError: (e)=>{
+        const msg = YT_ERROR_MESSAGES[e.data] || ("שגיאת ניגון (קוד " + e.data + ")");
+        lastYtErrorMessage = msg + " — " + new Date().toLocaleTimeString("he-IL",{hour:"2-digit",minute:"2-digit"});
+        showYtErrorBadge(msg);
+        // One automatic retry (covers transient hiccups); embedding-blocked errors (101/150)
+        // won't be helped by a retry, but it's harmless to try once anyway.
+        if(!ytErrorRetryDone && lastYtVideoId){
+          ytErrorRetryDone = true;
+          setTimeout(()=>{ try{ playYouTube(lastYtVideoId); }catch(err){} }, 1500);
+        }
+      }
+    }
+  });
+}
+window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+
+function showYtErrorBadge(msg){
+  const badge = document.getElementById("ytErrorBadge");
+  badge.querySelector("span.msg").textContent = "⚠ שיר לא ניתן לניגון: " + msg;
+  badge.classList.remove("hidden");
+  clearTimeout(showYtErrorBadge._t);
+  showYtErrorBadge._t = setTimeout(()=> badge.classList.add("hidden"), 15000);
+}
+
+/* #3: verify the player is actually responsive right before a scheduled trigger; rebuild it
+   if it's gone stale/unresponsive instead of silently failing. */
+function reinitYouTubePlayerIfDead(){
+  try{
+    if(ytReady && ytPlayer && typeof ytPlayer.getPlayerState === "function"){
+      ytPlayer.getPlayerState(); // throws if the embed has died
+      return; // still alive
+    }
+  }catch(e){ /* fall through to rebuild */ }
+  try{ if(ytPlayer && ytPlayer.destroy) ytPlayer.destroy(); }catch(e){}
+  ytReady = false;
+  onYouTubeIframeAPIReady();
+}
+
+function fadeInYouTube(target=100, duration=2500){
+  if(!ytReady) return;
+  const steps = 20; let i = 0;
+  const interval = setInterval(()=>{
+    i++;
+    try{ ytPlayer.setVolume(Math.round((i/steps)*target)); }catch(e){}
+    if(i>=steps) clearInterval(interval);
+  }, duration/steps);
+}
+/* Loads and plays muted first (browsers always allow muted autoplay), then only unmutes
+   once the player actually reports PLAYING — this avoids the "stutters a second, retries"
+   symptom of requesting unmuted autoplay immediately. A safety timeout unmutes anyway if the
+   PLAYING event is ever missed, so the song is never stuck silent. */
+function playYouTube(videoId){
+  if(!videoId) return;
+  lastYtVideoId = videoId;
+  ytErrorRetryDone = false;
+  reinitYouTubePlayerIfDead();
+  const doPlay = () => {
+    try{
+      onPlayingUnmuteCallback = null;
+      ytPlayer.mute();
+      ytPlayer.setVolume(0);
+      ytPlayer.loadVideoById(videoId);
+      ytPlayer.playVideo();
+
+      onPlayingUnmuteCallback = () => {
+        try{ ytPlayer.unMute(); fadeInYouTube(100, 2500); }catch(e){}
+      };
+      setTimeout(()=>{
+        if(onPlayingUnmuteCallback){
+          const cb = onPlayingUnmuteCallback;
+          onPlayingUnmuteCallback = null;
+          cb();
+        }
+      }, 4000);
+    }catch(e){}
+  };
+  if(ytReady) doPlay(); else pendingYtAction = doPlay;
+}
+function stopYouTube(){
+  onPlayingUnmuteCallback = null;
+  if(ytReady){ try{ ytPlayer.stopVideo(); }catch(e){} }
+}
+
+/* ========================================================================
+   LOCAL AUDIO FILE PLAYBACK (IndexedDB-backed, works with no internet at all)
+======================================================================== */
+let currentLocalObjectUrl = null;
+function fadeInLocalAudio(el, duration=2500){
+  const steps = 20; let i = 0;
+  el.volume = 0;
+  const interval = setInterval(()=>{
+    i++;
+    el.volume = Math.min(1, i/steps);
+    if(i>=steps) clearInterval(interval);
+  }, duration/steps);
+}
+async function playLocalAudio(dbSlot, onEnded){
+  try{
+    const rec = await loadAudioFile(dbSlot);
+    if(!rec || !rec.blob) return false;
+    if(currentLocalObjectUrl){ URL.revokeObjectURL(currentLocalObjectUrl); currentLocalObjectUrl = null; }
+    const url = URL.createObjectURL(rec.blob);
+    currentLocalObjectUrl = url;
+    const el = document.getElementById("localAudioPlayer");
+    el.pause();
+    el.src = url;
+    el.volume = 0;
+    el.onended = ()=>{ if(onEnded) onEnded(); };
+    el.play().then(()=>{ fadeInLocalAudio(el, 2500); }).catch(()=>{ /* still silently allowed to fail like any autoplay */ });
+    return true;
+  }catch(e){ return false; }
+}
+function stopLocalAudio(){
+  const el = document.getElementById("localAudioPlayer");
+  try{ el.pause(); }catch(e){}
+}
+
+/* Unified dispatcher: every song slot (Friday / Motzash / each chag) is either YouTube or a
+   locally uploaded file — this picks the right playback path without the scheduler needing
+   to know which. */
+function playSongSlot(slotValue){
+  if(!slotValue) return;
+  if(slotValue.source === "local"){ playLocalAudio(slotValue.dbSlot || slotValue.id); }
+  else if(slotValue.id){ playYouTube(slotValue.id); }
+}
+function stopAllPlayback(){
+  stopYouTube();
+  stopLocalAudio();
+}
+
+/* ========================================================================
+   SIREN — continuous flat tone, short fade edges only, adjustable duration/source
+======================================================================== */
+function ensureAudioCtx(){
+  if(!audioCtx){ const Ctx = window.AudioContext || window.webkitAudioContext; audioCtx = new Ctx(); }
+  if(audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function playBuiltinSiren(durationSec){
+  durationSec = durationSec || settings.sirenDuration || 15;
+  const ctx = ensureAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = 640;
+  osc.connect(gain); gain.connect(ctx.destination);
+
+  const now = ctx.currentTime;
+  const fade = 0.25;
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.linearRampToValueAtTime(0.32, now + fade);
+  gain.gain.setValueAtTime(0.32, now + durationSec - fade);
+  gain.gain.linearRampToValueAtTime(0.0001, now + durationSec);
+
+  osc.start(now);
+  osc.stop(now + durationSec + 0.05);
+  return durationSec;
+}
+function playSiren(onDone, forceDurationSec){
+  const durationSec = forceDurationSec || settings.sirenDuration || 15;
+  if(settings.sirenType === "local"){
+    playLocalAudio("siren", onDone).then(started=>{
+      if(!started){
+        playBuiltinSiren(durationSec);
+        setTimeout(()=>{ if(onDone) onDone(); }, durationSec*1000 + 300);
+      } else if(forceDurationSec){
+        setTimeout(()=>{ stopLocalAudio(); if(onDone) onDone(); }, forceDurationSec*1000);
+      }
+    });
+  } else if(settings.sirenType === "url" && settings.sirenUrl){
+    try{
+      const a = new Audio(settings.sirenUrl);
+      a.volume = 1.0;
+      a.addEventListener("ended", ()=>{ if(onDone) onDone(); });
+      a.play().then(()=>{
+        if(forceDurationSec){ setTimeout(()=>{ a.pause(); if(onDone) onDone(); }, forceDurationSec*1000); }
+      }).catch(()=>{ playBuiltinSiren(durationSec); setTimeout(()=>{ if(onDone) onDone(); }, durationSec*1000 + 300); });
+    }catch(e){ playBuiltinSiren(durationSec); setTimeout(()=>{ if(onDone) onDone(); }, durationSec*1000 + 300); }
+  } else {
+    playBuiltinSiren(durationSec);
+    setTimeout(()=>{ if(onDone) onDone(); }, durationSec*1000 + 300);
+  }
+}
+
+/* ========================================================================
+   PRE-SHABBAT REMINDERS — banner + gentle repeating chime, ducking whatever
+   song may currently be playing instead of fighting with it.
+======================================================================== */
+let remindersFired = { hour:false, half:false };
+let reminderAutoHideTimer = null;
+
+function playDingDongOnce(ctx, startTime){
+  [880, 660].forEach((freq, i)=>{
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    osc.connect(gain); gain.connect(ctx.destination);
+    const t0 = startTime + i*0.32;
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(0.3, t0+0.05);
+    gain.gain.linearRampToValueAtTime(0.0001, t0+0.3);
+    osc.start(t0); osc.stop(t0+0.32);
+  });
+}
+function fadeYtVolumeTo(target, duration){
+  if(!ytReady) return;
+  let start = 100;
+  try{ start = ytPlayer.getVolume(); }catch(e){}
+  const steps = 15; let i = 0;
+  const iv = setInterval(()=>{
+    i++;
+    try{ ytPlayer.setVolume(Math.round(start + (target-start)*(i/steps))); }catch(e){}
+    if(i>=steps) clearInterval(iv);
+  }, duration/steps);
+}
+function fadeLocalVolumeTo(el, target, duration){
+  const start = el.volume;
+  const steps = 15; let i = 0;
+  const iv = setInterval(()=>{
+    i++;
+    el.volume = Math.max(0, Math.min(1, start + (target-start)*(i/steps)));
+    if(i>=steps) clearInterval(iv);
+  }, duration/steps);
+}
+function playReminderChimeWithDucking(){
+  const ctx = ensureAudioCtx();
+  let ytWasPlaying = false, ytOrigVol = 100;
+  try{
+    if(ytReady && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING){
+      ytWasPlaying = true;
+      ytOrigVol = ytPlayer.getVolume();
+      ytPlayer.setVolume(Math.round(ytOrigVol * 0.25));
+    }
+  }catch(e){}
+
+  const localEl = document.getElementById("localAudioPlayer");
+  let localWasPlaying = false, localOrigVol = 1;
+  if(localEl && !localEl.paused){
+    localWasPlaying = true;
+    localOrigVol = localEl.volume;
+    localEl.volume = localOrigVol * 0.25;
+  }
+
+  const repeats = 3, perRepeat = 0.7;
+  for(let r=0; r<repeats; r++) playDingDongOnce(ctx, ctx.currentTime + r*perRepeat);
+
+  setTimeout(()=>{
+    if(ytWasPlaying) fadeYtVolumeTo(ytOrigVol, 1200);
+    if(localWasPlaying) fadeLocalVolumeTo(localEl, localOrigVol, 1200);
+  }, repeats*perRepeat*1000 + 200);
+}
+
+function showReminderBanner(key){
+  const items = [...settings.reminders[key].selected, ...settings.reminders[key].custom];
+  if(items.length === 0) return;
+  document.getElementById("reminderBannerTitle").textContent = key === "hour" ? "שעה לפני כניסת שבת" : "חצי שעה לפני כניסת שבת";
+  document.getElementById("reminderBannerList").innerHTML = items.map(i => `<li>${i}</li>`).join("");
+  document.getElementById("reminderBanner").classList.remove("hidden");
+  playReminderChimeWithDucking();
+  clearTimeout(reminderAutoHideTimer);
+  reminderAutoHideTimer = setTimeout(hideReminderBanner, 10*60*1000);
+}
+function hideReminderBanner(){
+  document.getElementById("reminderBanner").classList.add("hidden");
+  clearTimeout(reminderAutoHideTimer);
+}
+
+/* ========================================================================
+   VISUAL STATE
+======================================================================== */
+function setShabbatGreetingVisible(visible){
+  document.getElementById("candleL").classList.toggle("hidden", !visible);
+  document.getElementById("candleR").classList.toggle("hidden", !visible);
+  document.getElementById("shabbatGreetingText").classList.toggle("hidden", !visible);
+  document.getElementById("countdownWrap").classList.toggle("hidden", visible || !settings.showCountdown);
+}
+function setShabbatVisual(active){
+  document.getElementById("bgLayer").classList.toggle("shabbat-active", active);
+  document.getElementById("shabbatBadge").classList.toggle("hidden", !active);
+}
+function enterShabbatMute(){ shabbatMuteActive = true; stopAllPlayback(); setShabbatVisual(true); }
+function exitShabbatMute(){ shabbatMuteActive = false; setShabbatVisual(false); }
+
+/* ========================================================================
+   MAIN TICK — clock, countdown ring, scheduler
+======================================================================== */
+function tick(){
+  const now = new Date();
+  document.getElementById("mainClock").textContent = fmtHMS(now);
+  document.getElementById("weekdayLine").textContent = now.toLocaleDateString("he-IL",{weekday:"long"});
+  document.getElementById("gregDateLine").textContent = now.toLocaleDateString("he-IL",{day:"numeric",month:"long",year:"numeric"});
+  fetchHebrewDateIfNeeded(now);
+  updateCountdown(now);
+  if(!simRunning) checkScheduledEvents(now);
+}
+
+function updateCountdown(now){
+  const circumference = 414.7;
+  if(!times.candleLighting || !times.havdalah){
+    document.getElementById("countdownText").textContent = "--:--:--";
+    document.getElementById("countdownLabel").textContent = "טוען זמנים...";
+    setShabbatGreetingVisible(false);
+    return;
+  }
+
+  let target, label, totalMs, isShabbatNow = false, phaseIsShabbatOrRT = false;
+  const inChagExtension = times.chagExitTime && now >= times.havdalah && now < times.chagExitTime;
+
+  if(now < times.candleLighting){
+    target = times.candleLighting; label = "עד כניסת שבת";
+    totalMs = 48*3600*1000;
+  } else if(now < times.havdalah){
+    target = times.havdalah; label = "עד צאת שבת";
+    totalMs = times.havdalah - times.candleLighting;
+    isShabbatNow = true; phaseIsShabbatOrRT = true;
+  } else if(inChagExtension){
+    target = times.chagExitTime; label = "עד צאת החג";
+    totalMs = times.chagExitTime - times.havdalah;
+    phaseIsShabbatOrRT = true;
+  } else if(times.rabbeinuTam && now < times.rabbeinuTam){
+    target = times.rabbeinuTam; label = "עד צאת שבת (ר״ת)";
+    totalMs = times.rabbeinuTam - times.havdalah;
+    phaseIsShabbatOrRT = true;
+  } else {
+    target = null; label = "שבוע טוב! ממתין לשבת הבאה";
+  }
+
+  setShabbatGreetingVisible(isShabbatNow);
+  setShabbatVisual(phaseIsShabbatOrRT && shabbatMuteActive);
+
+  if(target){
+    const diff = Math.max(0, target - now);
+    const h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+    document.getElementById("countdownText").textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+    const frac = totalMs > 0 ? Math.min(1, Math.max(0, diff/totalMs)) : 0;
+    document.getElementById("ringFg").style.strokeDashoffset = circumference * (1 - frac);
+  } else {
+    document.getElementById("countdownText").textContent = "00:00:00";
+    document.getElementById("ringFg").style.strokeDashoffset = 0;
+  }
+  document.getElementById("countdownLabel").textContent = label;
+}
+
+function checkScheduledEvents(now){
+  if(!times.candleLighting) return;
+
+  if(settings.reminders.enabled){
+    const hourTrigger = new Date(times.candleLighting.getTime() - 60*60000);
+    if(!remindersFired.hour && now >= hourTrigger && now < new Date(hourTrigger.getTime()+60000)){
+      remindersFired.hour = true;
+      showReminderBanner("hour");
+    }
+    const halfTrigger = new Date(times.candleLighting.getTime() - 30*60000);
+    if(!remindersFired.half && now >= halfTrigger && now < new Date(halfTrigger.getTime()+60000)){
+      remindersFired.half = true;
+      showReminderBanner("half");
+    }
+  }
+
+  if(!firedFlags.fridaySong){
+    const fridaySlot = getSlotValue(SONG_SLOTS[0]);
+    if(fridaySlot && (fridaySlot.id || fridaySlot.source === "local")){
+      const triggerAt = new Date(times.candleLighting.getTime() - settings.fridaySongOffset*60000);
+      if(now >= triggerAt && now < times.candleLighting){
+        firedFlags.fridaySong = true;
+        playSongSlot({ ...fridaySlot, dbSlot:"friday" });
+      }
+    }
+  }
+
+  if(!firedFlags.siren && settings.sirenEnabled && !times.fridayIsYomTov){
+    if(now >= times.candleLighting && now < new Date(times.candleLighting.getTime()+60000)){
+      firedFlags.siren = true;
+      stopAllPlayback();
+      playSiren(enterShabbatMute);
+    }
+  }
+
+  // Regular Motzash song/exit — suppressed entirely when Shabbat flows directly into a Chag;
+  // in that case it fires later, at the chag-exit trigger below, instead.
+  const motzashSlot = getSlotValue(SONG_SLOTS[1]);
+  const motzashHasSong = motzashSlot && (motzashSlot.id || motzashSlot.source === "local");
+
+  if(!times.chagExitTime){
+    if(!firedFlags.motzashRegular && times.havdalah && (settings.motzashTiming==="regular"||settings.motzashTiming==="both") && motzashHasSong){
+      if(now >= times.havdalah && now < new Date(times.havdalah.getTime()+60000)){
+        firedFlags.motzashRegular = true;
+        exitShabbatMute();
+        playSongSlot({ ...motzashSlot, dbSlot:"motzash" });
+      }
+    }
+    if(!firedFlags.motzashRT && times.rabbeinuTam && (settings.motzashTiming==="rt"||settings.motzashTiming==="both") && motzashHasSong){
+      if(now >= times.rabbeinuTam && now < new Date(times.rabbeinuTam.getTime()+60000)){
+        firedFlags.motzashRT = true;
+        exitShabbatMute();
+        playSongSlot({ ...motzashSlot, dbSlot:"motzash" });
+      }
+    }
+  }
+
+  // Chag-exit trigger: Shabbat flowed directly into a holiday — play the regular Motzash song
+  // only once the holiday itself actually ends (possibly days later).
+  if(times.chagExitTime && !chagExitFired && motzashHasSong){
+    if(now >= times.chagExitTime && now < new Date(times.chagExitTime.getTime()+60000)){
+      chagExitFired = true;
+      exitShabbatMute();
+      playSongSlot({ ...motzashSlot, dbSlot:"motzash" });
+    }
+  }
+
+  // Erev-chag songs (one of 5, matched to the specific upcoming holiday)
+  if(!erevChagFired && settings.erevChagEnabled && times.nextErevChag && times.nextErevChag.holidayKey){
+    const chagSlot = settings.chagSongs[times.nextErevChag.holidayKey];
+    if(chagSlot && (chagSlot.id || chagSlot.source === "local")){
+      const triggerAt = new Date(times.nextErevChag.date.getTime() - settings.fridaySongOffset*60000);
+      if(now >= triggerAt && now < times.nextErevChag.date){
+        erevChagFired = true;
+        playSongSlot({ ...chagSlot, dbSlot:"chag_"+times.nextErevChag.holidayKey });
+      }
+    }
+  }
+
+  const lastExit = times.chagExitTime || times.rabbeinuTam || times.havdalah;
+  if(lastExit && now >= lastExit && !refreshedAfterShabbat){
+    refreshedAfterShabbat = true;
+    setTimeout(fetchWeeklyTimes, 3000);
+  }
+}
+
+/* ========================================================================
+   TEST / SIMULATION MODE — walks through every configured audio source
+======================================================================== */
+function runSimulation(){
+  if(simRunning) return;
+  simRunning = true;
+  ensureAudioCtx();
+  const status = document.getElementById("testModeStatus");
+  const TEST_STEP_MS = 5000;
+
+  // Build the list of steps dynamically so only configured slots are tested.
+  const steps = [];
+  const fridaySlot = getSlotValue(SONG_SLOTS[0]);
+  if(fridaySlot && (fridaySlot.id || fridaySlot.source==="local")){
+    steps.push({ label:"שיר כניסת שבת", fn:()=> playSongSlot({...fridaySlot, dbSlot:"friday"}), holdMs:TEST_STEP_MS });
+  }
+  if(settings.sirenEnabled){
+    steps.push({ label:"צפירת כניסת שבת (5 שנ׳ בבדיקה)", fn:(done)=>{ stopAllPlayback(); setShabbatGreetingVisible(true); playSiren(done, 5); }, holdMs:TEST_STEP_MS, async:true });
+  }
+  const motzashSlot = getSlotValue(SONG_SLOTS[1]);
+  if(motzashSlot && (motzashSlot.id || motzashSlot.source==="local")){
+    steps.push({ label:"שיר מוצאי שבת", fn:()=> { setShabbatGreetingVisible(false); playSongSlot({...motzashSlot, dbSlot:"motzash"}); }, holdMs:TEST_STEP_MS });
+  }
+  if(settings.erevChagEnabled){
+    CHAG_KEYS.forEach(key=>{
+      const slot = settings.chagSongs[key];
+      if(slot && (slot.id || slot.source==="local")){
+        steps.push({ label:"שיר "+CHAG_LABELS[key], fn:()=> playSongSlot({...slot, dbSlot:"chag_"+key}), holdMs:TEST_STEP_MS });
+      }
+    });
+  }
+  if(settings.reminders.enabled){
+    ["hour","half"].forEach(key=>{
+      const items = [...settings.reminders[key].selected, ...settings.reminders[key].custom];
+      if(items.length > 0){
+        steps.push({
+          label: "תזכורת: " + (key==="hour" ? "שעה לפני כניסת שבת" : "חצי שעה לפני כניסת שבת"),
+          fn: ()=> showReminderBanner(key),
+          holdMs: TEST_STEP_MS
+        });
+      }
+    });
+  }
+
+  if(steps.length === 0){
+    status.textContent = "לא הוגדר אף רכיב שמע/תזכורת לבדיקה — הוסף שיר, צפירה או תזכורת קודם";
+    simRunning = false;
+    return;
+  }
+
+  let i = 0;
+  function runNext(){
+    hideReminderBanner();
+    if(i >= steps.length){
+      status.textContent = `הבדיקה הושלמה בהצלחה ✔ (${steps.length} רכיבים נבדקו)`;
+      stopAllPlayback();
+      setShabbatGreetingVisible(false);
+      simRunning = false;
+      return;
+    }
+    const step = steps[i];
+    status.textContent = `בודק ${i+1}/${steps.length}: ${step.label}...`;
+    stopAllPlayback();
+    if(step.async){
+      step.fn(()=>{ i++; setTimeout(runNext, 400); });
+    } else {
+      step.fn();
+      i++;
+      setTimeout(runNext, step.holdMs);
+    }
+  }
+  runNext();
+}
+
+/* ========================================================================
+   AUDIO UNLOCK
+======================================================================== */
+const SILENT_WAV = "data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";
+
+function setAudioStatusUI(state){
+  const dot = document.getElementById("audioStatusDot");
+  const onIcon = document.getElementById("audioIconOn");
+  const offIcon = document.getElementById("audioIconOff");
+  const label = document.getElementById("audioStatusLabel");
+  dot.classList.remove("bg-emerald-400","bg-neutral-500","bg-red-400");
+  if(state === "verified"){
+    dot.classList.add("bg-emerald-400");
+    onIcon.classList.remove("hidden"); offIcon.classList.add("hidden");
+    label.classList.add("hidden");
+  } else {
+    dot.classList.add(state === "blocked" ? "bg-red-400" : "bg-neutral-500");
+    onIcon.classList.add("hidden"); offIcon.classList.remove("hidden");
+    label.classList.remove("hidden");
+    label.textContent = state === "blocked" ? "לחץ שוב לאישור שמע" : "לאישור הפעלת מוזיקה";
+  }
+}
+
+/* #6+7+8 merged: never trust a stale "already unlocked" flag from a previous session —
+   real audio permission isn't guaranteed to persist across page loads/tabs, and for a
+   cross-origin embed (YouTube) it's a separate decision from the top-level page anyway.
+   Re-verifies every time, using two signals together:
+   (a) event.isTrusted — rejects synthetic clicks (e.g. from a browser extension that
+       auto-dismisses anything that looks like an overlay/popup), and
+   (b) an actual playback attempt (not just "the code ran without throwing") — a valid
+       silent WAV's play() Promise genuinely rejects if the browser is blocking autoplay,
+       which a flag in localStorage can never truly guarantee. */
+async function verifyAndUnlockAudio(evt){
+  if(evt && evt.isTrusted === false){
+    setAudioStatusUI("blocked");
+    return;
+  }
+  ensureAudioCtx();
+
+  let ytOk = false, localOk = false;
+  try{
+    if(ytReady){
+      ytPlayer.mute();
+      ytPlayer.playVideo();
+      await new Promise(r=>setTimeout(r, 250));
+      ytPlayer.pauseVideo();
+      ytPlayer.unMute();
+      ytOk = true;
+    }
+  }catch(e){ /* leave ytOk false */ }
+
+  try{
+    const el = document.getElementById("localAudioPlayer");
+    el.muted = true;
+    el.src = SILENT_WAV;
+    await el.play(); // real rejection here means autoplay is genuinely still blocked
+    el.pause();
+    el.muted = false;
+    el.removeAttribute("src");
+    localOk = true;
+  }catch(e){ localOk = false; }
+
+  const verified = ytOk || localOk;
+  settings.audioUnlocked = verified;
+  saveSettings();
+  setAudioStatusUI(verified ? "verified" : "blocked");
+}
+
+/* ========================================================================
+   FULLSCREEN
+======================================================================== */
+function toggleFullscreen(){
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen().catch(()=>{});
+  } else {
+    document.exitFullscreen().catch(()=>{});
+  }
+}
+document.addEventListener("fullscreenchange", ()=>{
+  const isFs = !!document.fullscreenElement;
+  document.getElementById("fullscreenIconExpand").classList.toggle("hidden", isFs);
+  document.getElementById("fullscreenIconCompress").classList.toggle("hidden", !isFs);
+});
+
+/* ========================================================================
+   VIEWPORT HEIGHT — computed in JS instead of relying only on CSS dvh, since
+   mobile Chrome/Safari resolve dvh at different, sometimes stale, moments.
+   window.innerHeight always reflects the real visible area right now.
+======================================================================== */
+function setAppHeight(){
+  document.documentElement.style.setProperty("--app-vh", window.innerHeight + "px");
+}
+setAppHeight();
+window.addEventListener("resize", setAppHeight);
+window.addEventListener("orientationchange", ()=> setTimeout(setAppHeight, 100));
+
+/* #2: best-effort keep-alive. Cannot guarantee a backgrounded/locked tab stays fully alive
+   (that's an OS/browser power-saving decision no page script can fully override) — but for
+   the intended use (a visible, always-on home display), this meaningfully reduces the chance
+   the YouTube embed or AudioContext have quietly gone stale by the time a trigger fires. */
+setInterval(()=>{
+  try{ if(ytReady && ytPlayer) ytPlayer.getPlayerState(); }catch(e){}
+  try{ if(audioCtx && audioCtx.state === "suspended") audioCtx.resume(); }catch(e){}
+}, 5*60*1000);
+
+/* ========================================================================
+   WAKE LOCK
+======================================================================== */
+async function requestWakeLock(){
+  try{ if("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); }catch(e){}
+}
+document.addEventListener("visibilitychange", async ()=>{
+  if(wakeLock !== null && document.visibilityState === "visible") await requestWakeLock();
+});
+
+/* ========================================================================
+   GPS LOCATION
+======================================================================== */
+function useGpsLocation(){
+  if(!("geolocation" in navigator)){
+    document.getElementById("gpsStatus").textContent = "הדפדפן אינו תומך באיתור מיקום";
+    return;
+  }
+  document.getElementById("gpsStatus").textContent = "מאתר מיקום...";
+  navigator.geolocation.getCurrentPosition(async (pos)=>{
+    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+    let label = "מיקום נוכחי";
+    try{
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=he`);
+      const data = await res.json();
+      const addr = data.address || {};
+      label = addr.city || addr.town || addr.village || addr.suburb || addr.county || label;
+    }catch(e){ /* keep generic label if reverse geocoding fails */ }
+
+    settings.useCustomLocation = true;
+    settings.customLocation = { lat, lng, tzid:"Asia/Jerusalem", label };
+    saveSettings();
+    applyLocationModeUI();
+    document.getElementById("gpsStatus").textContent = "זוהה: " + label;
+    fetchWeeklyTimes();
+  }, ()=>{
+    document.getElementById("gpsStatus").textContent = "לא ניתן היה לקבל הרשאת מיקום";
+  });
+}
+function useCityListLocation(){
+  settings.useCustomLocation = false;
+  saveSettings();
+  applyLocationModeUI();
+  document.getElementById("gpsStatus").textContent = "";
+  fetchWeeklyTimes();
+}
+function applyLocationModeUI(){
+  const citySelect = document.getElementById("citySelect");
+  const revertBtn = document.getElementById("useCityListBtn");
+  citySelect.disabled = !!settings.useCustomLocation;
+  citySelect.classList.toggle("opacity-40", !!settings.useCustomLocation);
+  revertBtn.classList.toggle("hidden", !settings.useCustomLocation);
+  if(settings.useCustomLocation && settings.customLocation){
+    document.getElementById("gpsStatus").textContent = "זוהה: " + settings.customLocation.label;
+  }
+}
+
+/* ========================================================================
+   SETTINGS UI
+======================================================================== */
+function populateCitySelect(){
+  const sel = document.getElementById("citySelect");
+  sel.innerHTML = "";
+  CITIES.forEach((c,i)=>{
+    const opt = document.createElement("option");
+    opt.value = i; opt.textContent = c.label;
+    sel.appendChild(opt);
+  });
+  sel.value = settings.cityIndex;
+  sel.onchange = ()=>{
+    const picked = CITIES[parseInt(sel.value,10)];
+    document.getElementById("terrainWarningNote").classList.toggle("hidden", !(picked && picked.uncertainTerrain));
+  };
+}
+
+function renderSettingsForm(){
+  populateCitySelect();
+  updateDiagnostics();
+  switchSettingsTab("location");
+  document.getElementById("candleOffsetSelect").value = String(settings.candleOffset || 20);
+  document.getElementById("manualCorrectionInput").value = settings.manualCorrectionMinutes || 0;
+  document.getElementById("terrainWarningNote").classList.toggle("hidden", !getActiveCity().uncertainTerrain);
+  applyLocationModeUI();
+  document.getElementById("rtMethodSelect").value = settings.rtMethod;
+  document.getElementById("fridaySongOffset").value = settings.fridaySongOffset;
+  document.getElementById("sirenUrlInput").value = settings.sirenUrl;
+
+  document.getElementById("sirenToggle").classList.toggle("on", settings.sirenEnabled);
+  document.getElementById("sirenBuiltin").classList.toggle("selected", settings.sirenType==="builtin");
+  document.getElementById("sirenUrl").classList.toggle("selected", settings.sirenType==="url");
+  document.getElementById("sirenLocal").classList.toggle("selected", settings.sirenType==="local");
+  document.getElementById("sirenUrlInput").classList.toggle("hidden", settings.sirenType!=="url");
+  document.getElementById("sirenLocalWrap").classList.toggle("hidden", settings.sirenType!=="local");
+  loadAudioFile("siren").then(rec=>{
+    document.getElementById("sirenFileStatus").textContent = rec ? ("קובץ נטען: " + rec.filename) : "לא הועלה קובץ";
+  }).catch(()=>{});
+
+  const durMap = {15:"sirenDur15", 20:"sirenDur20", 25:"sirenDur25", 30:"sirenDur30"};
+  Object.values(durMap).forEach(id=>document.getElementById(id).classList.remove("selected"));
+  document.getElementById(durMap[settings.sirenDuration] || "sirenDur15").classList.add("selected");
+
+  document.getElementById("motzashRegular").classList.toggle("selected", settings.motzashTiming==="regular");
+  document.getElementById("motzashRT").classList.toggle("selected", settings.motzashTiming==="rt");
+  document.getElementById("motzashBoth").classList.toggle("selected", settings.motzashTiming==="both");
+
+  document.getElementById("erevChagToggle").classList.toggle("on", settings.erevChagEnabled);
+  document.getElementById("chagSongsContainer").classList.toggle("hidden", !settings.erevChagEnabled);
+  document.getElementById("countdownToggle").classList.toggle("on", settings.showCountdown);
+  document.getElementById("remindersToggle").classList.toggle("on", settings.reminders.enabled);
+  renderReminderUI("hour");
+  renderReminderUI("half");
+
+  SONG_SLOTS.forEach(renderSlotUI);
+}
+
+const SETTINGS_TABS = ["location","audio","reminders","advanced"];
+function switchSettingsTab(tabKey){
+  SETTINGS_TABS.forEach(k=>{
+    document.getElementById("tabPanel-"+k).classList.toggle("active", k===tabKey);
+    document.getElementById("tabBtn-"+k).classList.toggle("active", k===tabKey);
+  });
+  document.getElementById("settingsCard").scrollTop = 0;
+}
+
+function bindSettingsEvents(){
+  SETTINGS_TABS.forEach(k=>{
+    document.getElementById("tabBtn-"+k).onclick = ()=> switchSettingsTab(k);
+  });
+
+  document.getElementById("gearBtn").onclick = ()=>{
+    renderSettingsForm();
+    document.getElementById("settingsModal").classList.remove("hidden");
+    document.getElementById("settingsModal").classList.add("flex");
+    document.getElementById("settingsCard").scrollTop = 0;
+  };
+  document.getElementById("closeSettings").onclick = ()=>{
+    document.getElementById("settingsModal").classList.add("hidden");
+    document.getElementById("settingsModal").classList.remove("flex");
+  };
+  document.getElementById("fullscreenBtn").onclick = toggleFullscreen;
+
+  document.getElementById("sirenToggle").onclick = function(){ this.classList.toggle("on"); };
+  document.getElementById("erevChagToggle").onclick = function(){
+    this.classList.toggle("on");
+    document.getElementById("chagSongsContainer").classList.toggle("hidden", !this.classList.contains("on"));
+  };
+  document.getElementById("countdownToggle").onclick = function(){ this.classList.toggle("on"); };
+  document.getElementById("remindersToggle").onclick = function(){ this.classList.toggle("on"); };
+  document.getElementById("reminderDoneBtn").onclick = hideReminderBanner;
+
+  function selectSirenType(type){
+    document.getElementById("sirenBuiltin").classList.toggle("selected", type==="builtin");
+    document.getElementById("sirenUrl").classList.toggle("selected", type==="url");
+    document.getElementById("sirenLocal").classList.toggle("selected", type==="local");
+    document.getElementById("sirenUrlInput").classList.toggle("hidden", type!=="url");
+    document.getElementById("sirenLocalWrap").classList.toggle("hidden", type!=="local");
+  }
+  document.getElementById("sirenBuiltin").onclick = ()=> selectSirenType("builtin");
+  document.getElementById("sirenUrl").onclick = ()=> selectSirenType("url");
+  document.getElementById("sirenLocal").onclick = ()=> selectSirenType("local");
+
+  document.getElementById("sirenFileInput").onchange = async (e)=>{
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    try{
+      await saveAudioFile("siren", file);
+      document.getElementById("sirenFileStatus").textContent = "קובץ נטען: " + file.name;
+    }catch(err){
+      document.getElementById("sirenFileStatus").textContent = "שגיאה בשמירת הקובץ";
+    }
+  };
+
+  const durMap = {15:"sirenDur15", 20:"sirenDur20", 25:"sirenDur25", 30:"sirenDur30"};
+  Object.entries(durMap).forEach(([val,id])=>{
+    document.getElementById(id).onclick = ()=>{
+      Object.values(durMap).forEach(elId=>document.getElementById(elId).classList.remove("selected"));
+      document.getElementById(id).classList.add("selected");
+    };
+  });
+
+  const motzashMap = {regular:"motzashRegular", rt:"motzashRT", both:"motzashBoth"};
+  function setMotzashPill(val){
+    Object.values(motzashMap).forEach(id=>document.getElementById(id).classList.remove("selected"));
+    document.getElementById(motzashMap[val]).classList.add("selected");
+  }
+  document.getElementById("motzashRegular").onclick = ()=> setMotzashPill("regular");
+  document.getElementById("motzashRT").onclick = ()=> setMotzashPill("rt");
+  document.getElementById("motzashBoth").onclick = ()=> setMotzashPill("both");
+
+  document.getElementById("refreshDiagnosticsBtn").onclick = updateDiagnostics;
+  document.getElementById("gpsBtn").onclick = useGpsLocation;
+  document.getElementById("useCityListBtn").onclick = useCityListLocation;
+
+  document.getElementById("syncNowBtn").onclick = ()=>{
+    settings.cityIndex = parseInt(document.getElementById("citySelect").value,10);
+    settings.candleOffset = parseInt(document.getElementById("candleOffsetSelect").value,10) || 20;
+    settings.manualCorrectionMinutes = parseInt(document.getElementById("manualCorrectionInput").value,10) || 0;
+    settings.rtMethod = document.getElementById("rtMethodSelect").value;
+    saveSettings();
+    fetchWeeklyTimes();
+  };
+
+  document.getElementById("saveSettingsBtn").onclick = ()=>{
+    settings.cityIndex = parseInt(document.getElementById("citySelect").value,10);
+    settings.candleOffset = parseInt(document.getElementById("candleOffsetSelect").value,10) || 20;
+    settings.manualCorrectionMinutes = parseInt(document.getElementById("manualCorrectionInput").value,10) || 0;
+    settings.rtMethod = document.getElementById("rtMethodSelect").value;
+    settings.fridaySongOffset = parseInt(document.getElementById("fridaySongOffset").value,10) || 10;
+
+    settings.sirenEnabled = document.getElementById("sirenToggle").classList.contains("on");
+    settings.sirenType = document.getElementById("sirenBuiltin").classList.contains("selected") ? "builtin"
+                        : document.getElementById("sirenUrl").classList.contains("selected") ? "url"
+                        : "local";
+    settings.sirenUrl = document.getElementById("sirenUrlInput").value.trim();
+
+    let chosenDur = 15;
+    for(const [val,id] of Object.entries(durMap)){
+      if(document.getElementById(id).classList.contains("selected")) chosenDur = parseInt(val,10);
+    }
+    settings.sirenDuration = chosenDur;
+
+    settings.motzashTiming = document.getElementById("motzashRT").classList.contains("selected") ? "rt"
+                            : document.getElementById("motzashBoth").classList.contains("selected") ? "both"
+                            : "regular";
+    settings.erevChagEnabled = document.getElementById("erevChagToggle").classList.contains("on");
+    settings.showCountdown = document.getElementById("countdownToggle").classList.contains("on");
+    settings.reminders.enabled = document.getElementById("remindersToggle").classList.contains("on");
+
+    SONG_SLOTS.forEach(readSlotFromForm);
+
+    saveSettings();
+    applyCountdownVisibility();
+    resetWeekFlags();
+    fetchWeeklyTimes();
+    document.getElementById("settingsModal").classList.add("hidden");
+    document.getElementById("settingsModal").classList.remove("flex");
+  };
+
+  document.getElementById("testModeBtn").onclick = runSimulation;
+  document.getElementById("audioStatusBtn").onclick = (e)=> verifyAndUnlockAudio(e);
+}
+
+function applyCountdownVisibility(){
+  // The tick loop re-applies this every second based on Shabbat phase; this just covers
+  // the moment right after Save, before the next tick runs.
+  document.getElementById("countdownWrap").classList.toggle("hidden", !settings.showCountdown);
+}
+
+/* ========================================================================
+   INIT
+======================================================================== */
+function init(){
+  initSongSlotsUI();
+  initReminderUI();
+  bindSettingsEvents();
+  applyCountdownVisibility();
+  setAudioStatusUI("unknown"); // every fresh page load starts unverified, regardless of past sessions
+
+  const cached = loadTimesCache();
+  if(cached && cached.candleLighting){
+    times = cached;
+    timesAreStale = true;
+    renderTimes();
+    document.getElementById("cityName").textContent = getActiveCity().label;
+    document.getElementById("terrainBadge").classList.toggle("hidden", !getActiveCity().uncertainTerrain);
+    document.getElementById("yomtovBadge").classList.toggle("hidden", !times.fridayIsYomTov);
+    setStatusDot("stale");
+  }
+
+  fetchWeeklyTimes();
+  requestWakeLock();
+  setInterval(tick, 1000);
+  tick();
+  setInterval(()=>{ if(!isNearCriticalTrigger(new Date())) fetchWeeklyTimes(); }, 6*3600*1000);
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
